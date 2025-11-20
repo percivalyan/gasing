@@ -1,0 +1,110 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\TeacherEvent;
+use Illuminate\Support\Str;
+
+class TeacherEventSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $teachers = [
+            ['LELY, S.Pd', 'SMP NEGERI 2 TIOM', '082349548884'],
+            ['HELVIN YELIN LILIANI, S.Pd', 'SMP NEGERI 2 MAKKI', '085243386756'],
+            ['HIOE DJIEN TJEN', 'SMP NEGERI 2 TIOM', '081395632362'],
+            ['ARLIN, S.Pd', 'SD YPPGI ANYAKROME', '082281200721'],
+            ['FRANSISKA PASOLORAN, S.Pd', 'SMP NEGERI 1 PIRIME', '082397508447'],
+            ['EITA KOGOYA, S.Pd', 'SMP YPPGI TIOM', '085397944939'],
+            ['NONANCE WENDA, S.Pd', 'SMP NEGERI 2 TIOM', '085282247183'],
+            ['ARPITE WENDA, S.Pd', 'SMP NEGERI 2 TIOM', '085217385674'],
+            ['RISAL , S.Pd', 'SMP NEGERI 2 TIOM', '082199554999'],
+            ['FERDERIKA BOIKOPE, S.Pd', 'SD YPPGI INDUKAPAKA', '081340975562'],
+            ['SRI WAHYUNI, S.Pd', 'SMP NEGERI 1 TIOM', '081248501427'],
+            ['YOS YIGIBALOM, S.Pd', 'SMP NEGERI 1 TIOM', '085257177232'],
+            ['SHERLY DIANA KARMA, S.Pd', 'SD YPPGI GUWAPAKA', '082194551567'],
+            ['YERINUS WENDA, S.Pd', 'SMP NEGERI 4 TIOM', '085210810965'],
+            ['MAITENA GURIK, S,Pd', 'SMP YPPGI TIOM', '081282568345'],
+            ['MERI SUSANA SINULINGGA, S.Pd', 'PUAD PIT INIKIME PIRIME', '082198448572'],
+            ['WAITENUS KIWO, S.Pd', 'SMP NEGERI GELOK BEAM', '082130302301'],
+            ['ADEL TANAOS, S.Pd', 'SD YPPGI LULUME', '081331705217'],
+            ['NETIUS KOGOYA, S.Pd', 'SMP NEGERI 2 TIOM', null],
+            ['NITA TANDINARA, S.Pd', 'SMP NEGERI 2 PIRIME', '082239357392'],
+            ['MALDA WENDA, S.Pd', 'SMP NEGERI 4 MAKKI', '082297419090'],
+            ['AGUSTINA RUMPAISUM, S.Pd', 'SMP NEGERI 3 PIRIME', '082188030145'],
+            ['TIRIUS KOGOYA, S.Pd', 'SD INPRES NINDONAK', '082248508340'],
+            ['GERSON PLAIKOL, S,Pd', 'SMP NEGERI 1 DIMBA', '081279462986'],
+            ['FRISKA, S.Pd', 'SD NEGERI YOGOBAK', '082192848019'],
+            ['VICTORIANUS ADE PUTRA, S.Pd', 'SMK NEGERI 1 PIRIME', '082193870660'],
+            ['EPE YIGIBALOM, S.Pd', 'SMA NEGERI 1 TIOM', '081222235332'],
+            ['ULFA HASMAN, S.Pd', 'SD NEGERI KONIKME', '082248453436'],
+            ['IRMAWI SABAR, S.Pd', 'SMP NEGERI 2 TIOM', '082199591248'],
+            ['DOMINGGUS SAKUS, S.Pd', 'SMP NEGERI 2 PIRIME', '082299678816'],
+            ['NUR SUMANTI, S.Pd', 'SMP NEGERI TIOM', '085243506276'],
+            ['CORNELIS KAMBUTOP, S.Pd', 'SMP YPPGI TIOM', '081247758395'],
+            ['ARGONATAOSU, S.Pd', 'SMP NEGERI 3 MAKKI', '085333939904'],
+            ['LENDA WALELA, S.Pd', 'SMP NEGERI 1 POGA', '081240632053'],
+            ['BENDAYUS KOGOYA, S.Pd', 'SD NEGERI TINIME', '085292166159'],
+            ['BENIUS KOGOYA, S.Pd', 'SMP NEGERI 1 MAKKI', '082190497453'],
+            ['DOSINTUS LENAMA, S.Pd', null, null],
+            ['SERLITA TODING BUA’, S.Pd', 'SD NEGERI KONIKME', '081248674824'],
+            ['SADLY ANSI, S.Pd', 'SD INPRES MALAGAI', '085241492962'],
+            ['PRAYITNO, S.Pd', 'SMP NEGERI NAWI ABUA 1', '081247032403'],
+            ['CRISTIN RONSUMBRE, S.Pd', 'SD YPPGI TOBANAPME', '082248729600'],
+            ['ALFRIDA SAMON, S,Pd', 'SD YPPGI TOBANAPME', '081240960786'],
+            ['YOSANA KOGOYA, S.Pd', 'SMP NEGERI 2 GAMELIA', '082399613921'],
+            ['MIRIAM KOGOYA, S.Pd', 'SMP NEGERI 2 GAMELIA', '085244919167'],
+            ['DIEN WENDA, S.Pd', 'SD INPRES MAKKI', '081294467675'],
+            ['WENIK WENDA, S.Pd', 'SMP NEGERI 2 GAMELIA', '081248032768'],
+            ['YUNUS YIKWA, S.Pd', 'SMP NEGERI 1 BALINGGA', '081340208242'],
+            ['ERIS TABUNI, S.Pd', 'SD NEGERI YEREKA', '081340127148'],
+            ['NIPIUS TABUNI, S.Pd', 'SD NEGERI YEREKA', '082311163164'],
+            ['ENUS TABUNI, S.Pd', 'SD INPRES BRUME', null],
+            ['KOSMAN KOGOYA, S.Pd', 'SMP NEGERI 2 KUYAWAGE', null],
+            ['SYARIFUDIN, S.Pd', 'SMP NEGERI 1 DIMBA', '082341409242'],
+            ['LUDIA YAUNG, S.Pd.Gr', 'SMA NEGERI TIOM', '081248610576'],
+            ['AGUSTINUS SEMBAI, S.Pd', 'SMP NEGERI 1 DIMBA', '081344564587'],
+            ['KORNELIA ADOLINA ONDEAFO, S.Pd', 'SMP NEGERI 1 TIOMNERI', '081248123723'],
+            ['BULUBAKA MORIB, S.Pd', 'SMP NEGERI BALINGGA', '08233932075'],
+            ['RODI WERENGGA, S.Pd', 'SMP NEGERI BALINGGA', '082198120370'],
+            ['SELFESTER LAY, S.Pd', 'SMP NEGERI 1 POGA', '082197812453'],
+            ['ARPITE KOGOYA, S.Pd', 'SMP NEGERI 2 TIOM', null],
+            ['BENDAYUS WENDA, S.Pd', 'SD INPRES TINIME', '082130322301'],
+            ['ITANIUS TABUNI, S.Pd', 'SMP NEGRI 2 BALINGGA', '082145638528'],
+            ['ABETINA WENDA, S.Pd', 'SD YPPGI DOME', null],
+            ['PERI YOMAN, S.Pd.K', 'SD YPPGI DOME', null],
+            ['IMELDHA CAROLINA FELLE, S.Pd', 'SMP NEGERI GELOK BEAM', null],
+            ['LEWONAS KOGOYA, S.Pd', 'SMP NEGERI 3 MAKKI', '082325138538'],
+            ['THEOFILUS IBO, S.Pd', 'SMTK BAPTIS TIOM', '081311875112'],
+            ['SOZAWATO TELAUMBANUA, S.Pd', 'SMP YPPGI TIOM', '082276227910'],
+            ['ELINCE WENDA, S.Pd', 'SMP NEGERI GELOK BEAM', '081358812727'],
+            ['RINA FALENTINA WAKERKWA, S.Pd', 'SMP NEGERI GAMELIA', '081342084975'],
+            ['KIYANIUS YIGIBALOM, S.Pd', 'SD YPPGI YUGWA', null],
+            ['DAVID BONAY, S.Pd', 'SD YPPGI NAMBUME', '082248123870'],
+            ['WARNER ALE, S.Pd', 'SD NEGERI KONIKME', '085219328417'],
+            ['MARTHA TINCE BAYANI, S.Pd', 'SMA NEGERI 1 TIOM', '081240940113'],
+            ['WINALISMAYANI, S.Pd', 'SMP NEGERI 1 TIOMNERI', '081343404325'],
+        ];
+
+        foreach ($teachers as $data) {
+            TeacherEvent::create([
+                'id' => (string) Str::uuid(),
+                'user_id' => null,
+                'name' => $data[0],
+                'school_origin' => $data[1],
+                'whatsapp_number' => $data[2],
+                'birth_place' => null,
+                'birth_date' => null,
+                'gender' => null,
+                'nip' => null,
+                'expertise_field' => null,
+                'last_education' => null,
+                'address' => null,
+                'photo' => null,
+                'letter_of_assignment' => null,
+                'status' => 'active',
+            ]);
+        }
+    }
+}

@@ -1,0 +1,24 @@
+@extends('panel.layouts.app')
+
+@section('content')
+<div class="pc-container">
+    <div class="pc-content">
+        @include('panel.layouts.breadcrumb')
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header">
+                        <h5 class="mb-0">Add New Teacher Event</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ route('teacher_event.insert') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            @include('panel.teacher_event._form', ['action' => 'Add'])
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
