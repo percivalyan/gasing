@@ -15,7 +15,7 @@ class StudentEventController extends Controller
     /**
      * Menampilkan daftar Student Event
      */
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Student Event', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
@@ -24,9 +24,52 @@ class StudentEventController extends Controller
         $data['PermissionEdit'] = PermissionRole::getPermission('Edit Student Event', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Student Event', Auth::user()->role_id);
 
-        $data['getRecord'] = StudentEvent::orderBy('created_at', 'desc')->get();
+        // Filter & search
+        $query = StudentEvent::query();
 
-        ActivityLogger::log('READ', 'Melihat daftar Student Event');
+        // Search (nama, NIK, sekolah, distrik)
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('nik', 'like', '%' . $keyword . '%')
+                    ->orWhere('school_origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('origin_district', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // Filter status
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter tingkat sekolah (opsional)
+        if (!empty($request->school_level)) {
+            $query->where('school_level', $request->school_level);
+        }
+
+        // Sorting
+        $allowedSortBy = ['created_at', 'name', 'school_level', 'status'];
+        $sortBy = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // Jika mau pakai pagination, ganti ->get() jadi ->paginate(20)
+        $data['getRecord'] = $query->get();
+
+        // Untuk mempertahankan nilai filter di view
+        $data['filter_status'] = $request->status;
+        $data['filter_school_level'] = $request->school_level;
+        $data['filter_keyword'] = $request->keyword;
+        $data['sort_by'] = $sortBy;
+        $data['sort_direction'] = $sortDirection;
+
+        ActivityLogger::log('READ', 'Melihat daftar Student Event (Admin Index)');
 
         return view('panel.student_event.list', $data);
     }
@@ -158,6 +201,9 @@ class StudentEventController extends Controller
      */
     public function formregistration()
     {
+        $PermissionRole = PermissionRole::getPermission('Add Student Event Kepala Sekolah', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
         $role = Auth::user()->role->name ?? '';
         if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
@@ -165,7 +211,7 @@ class StudentEventController extends Controller
 
         ActivityLogger::log('READ', 'Membuka form registration Student Event');
 
-        return view('panel.student_event.registration');
+        return view('panel.student_event.registration',);
     }
 
     /**
@@ -173,6 +219,9 @@ class StudentEventController extends Controller
      */
     public function registration(Request $request)
     {
+        $PermissionRole = PermissionRole::getPermission('Add Student Event Kepala Sekolah', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
         $role = Auth::user()->role->name ?? '';
         if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
@@ -211,7 +260,7 @@ class StudentEventController extends Controller
 
         ActivityLogger::log('CREATE', 'Registrasi Student Event: ' . $student->name);
 
-        return redirect()->back()->with('success', 'Pendaftaran Student Event berhasil.');
+        return redirect()->route('student_event.my_registration')->with('success', 'Pendaftaran Student Event berhasil dikirim.');
     }
 
     /**
@@ -237,5 +286,66 @@ class StudentEventController extends Controller
         ActivityLogger::log('DELETE', 'Menghapus Student Event: ' . $student->name);
 
         return redirect()->route('student_event.list')->with('success', 'Data Student Event berhasil dihapus.');
+    }
+
+    /**
+     * Index khusus Kepala Sekolah untuk melihat pendaftaran yang dia input sendiri
+     */
+    public function myRegistrationIndex(Request $request)
+    {
+        $PermissionRole = PermissionRole::getPermission('Add Student Event', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
+        $role = Auth::user()->role->name ?? '';
+        if ($role !== 'Kepala Sekolah') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $query = StudentEvent::where('user_id', Auth::id());
+
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('nik', 'like', '%' . $keyword . '%')
+                    ->orWhere('school_origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('origin_district', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $data['getRecord'] = $query->get();
+        $data['filter_status'] = $request->status;
+        $data['filter_keyword'] = $request->keyword;
+
+        ActivityLogger::log('READ', 'Melihat daftar Student Event milik sendiri (Kepala Sekolah)');
+
+        return view('panel.student_event.my_index', $data);
+    }
+
+    /**
+     * Update status Student Event (validasi oleh Admin)
+     */
+    public function updateStatus($id, Request $request)
+    {
+        $PermissionRole = PermissionRole::getPermission('Edit Student Event', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
+        $request->validate([
+            'status' => 'required|in:Pending,Accepted,Rejected',
+        ]);
+
+        $student = StudentEvent::findOrFail($id);
+        $student->status = $request->status;
+        $student->save();
+
+        ActivityLogger::log('UPDATE', 'Mengubah status Student Event: ' . $student->name . ' menjadi ' . $student->status);
+
+        return redirect()->back()->with('success', 'Status Student Event berhasil diperbarui.');
     }
 }

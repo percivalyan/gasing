@@ -13,22 +13,120 @@ use Illuminate\Support\Facades\Storage;
 class TeacherEventController extends Controller
 {
     /**
-     * Menampilkan daftar Teacher Event
+     * Menampilkan daftar Teacher Event (INDEX ADMIN)
      */
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Teacher Event', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Teacher Event', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Teacher Event', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Teacher Event', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Teacher Event', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Teacher Event', Auth::user()->role_id);
 
-        $data['getRecord'] = TeacherEvent::orderBy('name', 'asc')->get();
+        $query = TeacherEvent::query();
 
-        ActivityLogger::log('READ', 'Melihat daftar Teacher Event');
+        // Search (name, NIP, school_origin, expertise_field)
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('nip', 'like', '%' . $keyword . '%')
+                    ->orWhere('school_origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('expertise_field', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // Filter status
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // Sorting
+        $allowedSortBy   = ['created_at', 'name', 'expertise_field', 'status'];
+        $sortBy          = $request->get('sort_by');
+        $sortDirection   = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // Kalau mau pagination, ganti get() jadi paginate()
+        $data['getRecord']          = $query->get();
+        $data['filter_keyword']     = $request->keyword;
+        $data['filter_status']      = $request->status;
+        $data['sort_by']            = $sortBy;
+        $data['sort_direction']     = $sortDirection;
+
+        ActivityLogger::log('READ', 'Melihat daftar Teacher Event (Admin Index)');
 
         return view('panel.teacher_event.list', $data);
+    }
+
+    /**
+     * INDEX khusus Kepala Sekolah (hanya data yang dia input)
+     */
+    public function myRegistrationIndex(Request $request)
+    {
+        $PermissionRole = PermissionRole::getPermission('Add Teacher Event', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
+        $role = Auth::user()->role->name ?? '';
+        if ($role !== 'Kepala Sekolah') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $query = TeacherEvent::where('user_id', Auth::id());
+
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('nip', 'like', '%' . $keyword . '%')
+                    ->orWhere('school_origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('expertise_field', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $data['getRecord']      = $query->get();
+        $data['filter_keyword'] = $request->keyword;
+        $data['filter_status']  = $request->status;
+
+        ActivityLogger::log('READ', 'Melihat daftar Teacher Event milik sendiri (Kepala Sekolah)');
+
+        return view('panel.teacher_event.my_index', $data);
+    }
+
+    /**
+     * Update status Teacher Event (validasi oleh Admin)
+     */
+    public function updateStatus($id, Request $request)
+    {
+        $PermissionRole = PermissionRole::getPermission('Edit Teacher Event', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
+        $request->validate([
+            'status' => 'required|in:Pending,Accepted,Rejected',
+        ]);
+
+        $teacher = TeacherEvent::findOrFail($id);
+        $teacher->status = $request->status;
+        $teacher->save();
+
+        ActivityLogger::log(
+            'UPDATE',
+            'Mengubah status Teacher Event: ' . $teacher->name . ' menjadi ' . $teacher->status
+        );
+
+        return redirect()->back()->with('success', 'Status Teacher Event berhasil diperbarui.');
     }
 
     /**
@@ -174,6 +272,9 @@ class TeacherEventController extends Controller
      */
     public function formregistration()
     {
+        $PermissionRole = PermissionRole::getPermission('Add Teacher Event Kepala Sekolah', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
         $role = Auth::user()->role->name ?? '';
         if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
@@ -189,6 +290,9 @@ class TeacherEventController extends Controller
      */
     public function registration(Request $request)
     {
+        $PermissionRole = PermissionRole::getPermission('Add Teacher Event Kepala Sekolah', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
         $role = Auth::user()->role->name ?? '';
         if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
@@ -226,7 +330,7 @@ class TeacherEventController extends Controller
 
         ActivityLogger::log('CREATE', 'Registrasi Teacher Event: ' . $teacher->name);
 
-        return redirect()->back()->with('success', 'Pendaftaran Teacher Event berhasil.');
+       return redirect()->route('teacher_event.my_registration')->with('success', 'Pendaftaran Student Event berhasil dikirim.');
     }
 
     /**
