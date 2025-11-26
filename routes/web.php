@@ -14,6 +14,7 @@ use App\Http\Controllers\LetterTypeController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\SessionLogController;
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\FooterController;
 use App\Http\Controllers\OrganizationStructureController;
 use App\Http\Controllers\OrganizationMemberController;
 use App\Http\Controllers\TeacherEventController;
@@ -31,15 +32,23 @@ use App\Http\Controllers\TeacherEventPickerController;
 use App\Http\Controllers\StudentEventPickerController;
 use App\Http\Controllers\EventScheduleController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\HeadmasterRegistrationController;
 
 // Landing Page
 Route::get('/ar', [LandingPageController::class, 'all']);
 Route::get('/ar/{slug}', [LandingPageController::class, 'detail']);
 Route::get('/doc', [LandingPageController::class, 'documents'])->name('public.documents');
+Route::get('/peta-papua', [LandingPageController::class, 'mapPapua'])->name('public.map');
 
 // =============================
 // PUBLIC ROUTES (NO MIDDLEWARE)
 // =============================
+
+Route::get('register/headmaster', [HeadmasterRegistrationController::class, 'showRegistrationForm'])
+    ->name('register.headmaster');
+
+Route::post('register/headmaster', [HeadmasterRegistrationController::class, 'register'])
+    ->name('register.headmaster.process');
 
 // Landing page -> welcome.blade.php
 Route::get('/', [LandingPageController::class, 'index'])
@@ -80,14 +89,14 @@ Route::group(['middleware' => 'useradmin'], function () {
     Route::post('role/edit/{id}', [RoleController::class, 'update']);
     Route::get('role/delete/{id}', [RoleController::class, 'delete']);
 
-    Route::get('user', [UserController::class, 'list']);
-    Route::get('user/add', [UserController::class, 'add']);
-    Route::post('user/store', [UserController::class, 'insert']);
-    Route::get('user/edit/{id}', [UserController::class, 'edit']);
-    Route::post('user/edit/{id}', [UserController::class, 'update']);
-    Route::get('user/delete/{id}', [UserController::class, 'delete']);
+    Route::get('user', [UserController::class, 'list'])->name('user.index');
+    Route::get('user/add', [UserController::class, 'add'])->name('user.create');
+    Route::post('user/store', [UserController::class, 'insert'])->name('user.store');
+    Route::get('user/edit/{id}', [UserController::class, 'edit'])->name('user.edit');
+    Route::put('user/edit/{id}', [UserController::class, 'update'])->name('user.update');
+    Route::delete('user/delete/{id}', [UserController::class, 'delete'])->name('user.destroy');
     Route::get('user/edit-profile/{id}', [UserController::class, 'editProfile'])->name('user.edit-profile');
-    Route::post('user/edit-profile/{id}', [UserController::class, 'updateProfile']);
+    Route::post('user/edit-profile/{id}', [UserController::class, 'updateProfile'])->name('user.update-profile');
 
     Route::get('/guru-les-gasing', [UserController::class, 'listGuruLesGasing'])->name('user.list-guru-les-gasing');
     Route::get('/guru-les-gasing/create', [UserController::class, 'createGuruLesGasing'])->name('user.guru-les-gasing.create');
@@ -144,6 +153,11 @@ Route::group(['middleware' => 'useradmin'], function () {
     Route::post('about/edit/{id}', [AboutController::class, 'update'])->name('about.update');
     Route::get('about/delete/{id}', [AboutController::class, 'delete'])->name('about.delete');
 
+    Route::get('footer', [FooterController::class, 'list'])->name('footer.list');
+    Route::get('footer/edit/{id}', [FooterController::class, 'edit'])->name('footer.edit');
+    Route::post('footer/edit/{id}', [FooterController::class, 'update'])->name('footer.update');
+    Route::get('footer/delete/{id}', [FooterController::class, 'delete'])->name('footer.delete');
+
     Route::get('organization/structure', [OrganizationStructureController::class, 'list'])->name('organization.structure.list');
     Route::get('organization/structure/add', [OrganizationStructureController::class, 'add'])->name('organization.structure.add');
     Route::post('organization/structure/add', [OrganizationStructureController::class, 'insert'])->name('organization.structure.insert');
@@ -169,6 +183,11 @@ Route::group(['middleware' => 'useradmin'], function () {
     Route::post('teacher-event/update/{id}', [TeacherEventController::class, 'update'])->name('teacher_event.update');
     Route::get('teacher-event/delete/{id}', [TeacherEventController::class, 'delete'])->name('teacher_event.delete');
     Route::get('teacher-event/formregistration', [TeacherEventController::class, 'formregistration'])->name('teacher_event.formregistration');
+    Route::get('teacher-event/my-registration', [TeacherEventController::class, 'myRegistrationIndex'])
+        ->name('teacher_event.my_registration');
+    Route::patch('teacher-event/{id}/status', [TeacherEventController::class, 'updateStatus'])
+        ->name('teacher_event.update_status');
+
     Route::post('teacher-event/registration', [TeacherEventController::class, 'registration'])->name('teacher_event.registration');
 
     Route::get('student-event', [StudentEventController::class, 'list'])->name('student_event.list');
@@ -178,7 +197,11 @@ Route::group(['middleware' => 'useradmin'], function () {
     Route::post('student-event/update/{id}', [StudentEventController::class, 'update'])->name('student_event.update');
     Route::get('student-event/delete/{id}', [StudentEventController::class, 'delete'])->name('student_event.delete');
     Route::get('student-event/formregistration', [StudentEventController::class, 'formregistration'])->name('student_event.formregistration');
+    Route::get('student-event/my-registration', [StudentEventController::class, 'myRegistrationIndex'])
+        ->name('student_event.my_registration');
     Route::post('student-event/registration', [StudentEventController::class, 'registration'])->name('student_event.registration');
+    Route::patch('student-event/{id}/status', [StudentEventController::class, 'updateStatus'])
+        ->name('student_event.update_status');
 
     Route::get('student-course', [StudentCourseController::class, 'list'])->name('student_course.list');
     Route::get('student-course/add', [StudentCourseController::class, 'add'])->name('student_course.add');
