@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             TeacherEventSeeder::class,
             // Papua Random Seeder
             // PapuaRandomSeeder::class,
+            FooterSeeder::class,
         ]);
     }
 }
