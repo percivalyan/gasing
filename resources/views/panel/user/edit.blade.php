@@ -3,7 +3,6 @@
 @section('content')
     <div class="pc-container">
         <div class="pc-content">
-            <!-- [ breadcrumb ] start -->
             <div class="page-header">
                 <div class="page-block">
                     <div class="row align-items-center">
@@ -16,7 +15,7 @@
                                     <a href="{{ url('/') }}"><i class="feather icon-home"></i></a>
                                 </li>
                                 <li class="breadcrumb-item">
-                                    <a href="{{ url('role') }}">User</a>
+                                    <a href="{{ route('user.index') }}">User</a>
                                 </li>
                                 <li class="breadcrumb-item active">Edit User</li>
                             </ul>
@@ -24,9 +23,7 @@
                     </div>
                 </div>
             </div>
-            <!-- [ breadcrumb ] end -->
 
-            <!-- [ Form Section ] start -->
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card shadow-sm border-0">
@@ -34,40 +31,55 @@
                             <h5 class="mb-0">User Information</h5>
                         </div>
                         <div class="card-body">
-                            <form action=""{{ url('panel/user/edit/' . $getRecord->id) }}" method="POST">
+                            <form action="{{ route('user.update', $getRecord->id) }}" method="POST">
                                 @csrf
+                                @method('PUT')
+
                                 <div class="mb-3">
                                     <label for="name" class="form-label">User Name</label>
                                     <input type="text" name="name" id="name" class="form-control"
-                                        value="{{ $getRecord->name }}">
+                                        value="{{ old('name', $getRecord->name) }}">
+                                    @error('name')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="mb-3">
                                     <label for="email" class="form-label">E-Mail</label>
                                     <input type="email" name="email" id="email" class="form-control"
-                                        value="{{ $getRecord->email }}" required>
-                                    <div style="color:red">{{ $errors->first('email') }}</div>
+                                        value="{{ old('email', $getRecord->email) }}" required>
+                                    @error('email')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="mb-3">
                                     <label for="password" class="form-label">Password</label>
                                     <input type="text" name="password" id="password" class="form-control">
-                                    (Change Password if you want...)
+                                    <small class="text-muted">Leave blank if you do not want to change the password.</small>
+                                    @error('password')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="mb-3">
                                     <label for="role" class="form-label">Role</label>
-                                    <div class="col-sm-12">
-                                        <select name="role_id" id="role" class="form-control" required>
-                                            <option value="">Select</option>
-                                            @foreach ($getRole as $value)
-                                                <option value="{{ $value->id }}"
-                                                    {{ ($getRecord->role_id == $value->id) ? 'selected' : '' }}>
-                                                    {{ $value->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    <select name="role_id" id="role" class="form-control" required>
+                                        <option value="">Select</option>
+                                        @foreach ($getRole as $value)
+                                            <option value="{{ $value->id }}"
+                                                {{ old('role_id', $getRecord->role_id) == $value->id ? 'selected' : '' }}>
+                                                {{ $value->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('role_id')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
+
                                 <div class="text-end">
-                                    <a href="{{ url('user') }}" class="btn btn-secondary me-2">Cancel</a>
+                                    <a href="{{ route('user.index') }}" class="btn btn-secondary me-2">Cancel</a>
                                     <button type="submit" class="btn btn-primary">Update</button>
                                 </div>
                             </form>
@@ -75,7 +87,6 @@
                     </div>
                 </div>
             </div>
-            <!-- [ Form Section ] end -->
         </div>
     </div>
 @endsection
