@@ -83,12 +83,13 @@ class PermissionSeeder extends Seeder
             // Kepala Sekolah
             ['name' => 'Teacher Event', 'slug' => 'Teacher Event', 'groupby' => 13],
             ['name' => 'Add Teacher Event', 'slug' => 'Add Teacher Event', 'groupby' => 13],
+            ['name' => 'Add Teacher Event Kepala Sekolah', 'slug' => 'Add Teacher Event', 'groupby' => 13],
             ['name' => 'Edit Teacher Event', 'slug' => 'Edit Teacher Event', 'groupby' => 13],
             ['name' => 'Delete Teacher Event', 'slug' => 'Delete Teacher Event', 'groupby' => 13],
 
-            // Kepala Sekolah
             ['name' => 'Student Event', 'slug' => 'Student Event', 'groupby' => 14],
             ['name' => 'Add Student Event', 'slug' => 'Add Student Event', 'groupby' => 14],
+            ['name' => 'Add Student Event Kepala Sekolah', 'slug' => 'Add Student Event', 'groupby' => 14],
             ['name' => 'Edit Student Event', 'slug' => 'Edit Student Event', 'groupby' => 14],
             ['name' => 'Delete Student Event', 'slug' => 'Delete Student Event', 'groupby' => 14],
 
@@ -126,7 +127,7 @@ class PermissionSeeder extends Seeder
 
             ['name' => 'Attendance Course', 'slug' => 'Attendance Course', 'groupby' => 19],
             ['name' => 'Manage Attendance Course', 'slug' => 'Manage Attendance Course', 'groupby' => 19],
-            
+
             ['name' => 'Event Schedule', 'slug' => 'Event Schedule', 'groupby' => 20],
             ['name' => 'Add Event Schedule', 'slug' => 'Add Event Schedule', 'groupby' => 20],
             ['name' => 'Edit Event Schedule', 'slug' => 'Edit Event Schedule', 'groupby' => 20],
