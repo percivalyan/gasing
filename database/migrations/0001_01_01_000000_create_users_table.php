@@ -77,7 +77,7 @@ return new class extends Migration
         // STUDENT EVENTS
         Schema::create('student_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id')->nullable()->unique();
+            $table->uuid('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 
             $table->string('name');
@@ -100,7 +100,7 @@ return new class extends Migration
         // TEACHER EVENTS
         Schema::create('teacher_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id')->nullable()->unique();
+            $table->uuid('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 
             $table->string('name', 50);
