@@ -8,6 +8,7 @@ use App\Models\StudentEvent;
 use App\Models\TeacherEvent;
 use App\Models\Article;
 use App\Models\Document;
+use App\Models\Footer;
 
 class LandingPageController extends Controller
 {
@@ -17,6 +18,7 @@ class LandingPageController extends Controller
     public function index()
     {
         $about = About::first();
+        $footer = Footer::first();
         $articles = Article::with('category', 'user')
             ->where('status', 'published')
             ->latest()
@@ -33,36 +35,54 @@ class LandingPageController extends Controller
             'articles',
             'countSiswaLesGasing',
             'countSiswaGasingEvent',
-            'countGuruGasing'
+            'countGuruGasing',
+            'footer'
         ));
     }
 
     public function all()
     {
+        $footer = Footer::first();
         $articles = Article::with('category', 'user')
             ->where('status', 'published')
             ->latest()
             ->paginate(9);
 
-        return view('welcome.article.all', compact('articles'));
+        return view('welcome.article.all', compact('articles', 'footer'));
     }
 
     public function detail($slug)
     {
+        $footer = Footer::first();
         $article = Article::with('category', 'user')
             ->where('slug', $slug)
             ->where('status', 'published') // Pastikan artikel sudah publish
             ->firstOrFail();
 
-        return view('welcome.article.detail', compact('article'));
+        return view('welcome.article.detail', compact('article', 'footer'));
     }
 
     public function documents()
     {
+        $footer = Footer::first();
         $documents = Document::where('visibility', 'public')
             ->latest()
             ->paginate(9);
 
-        return view('welcome.document.all', compact('documents'));
+        return view('welcome.document.all', compact('documents', 'footer'));
+    }
+
+    public function mapPapua()
+    {
+        $footer = Footer::first();
+
+        // Contoh mengambil dari StudentEvent dan TeacherEvent
+        // Sesuaikan dengan kebutuhan Anda
+        $locations = StudentEvent::select('name', 'latitude', 'longitude', 'mimpi as info')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get();
+
+        return view('welcome.maps.map', compact('locations', 'footer'));
     }
 }
