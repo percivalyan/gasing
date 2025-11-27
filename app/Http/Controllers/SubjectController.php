@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class SubjectController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Subject', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
@@ -21,11 +21,33 @@ class SubjectController extends Controller
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Subject', Auth::user()->role_id);
 
         $q = Subject::query();
-        if ($search = request('q')) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%");
+
+        // Search
+        $search = $request->get('q');
+        if (!empty($search)) {
+            $q->where(function ($w) use ($search) {
+                $w->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
-        $data['subjects'] = $q->orderBy('name')->paginate(20);
+
+        // Sorting (whitelist kolom)
+        $allowedSortBy   = ['name', 'created_at'];
+        $sortBy          = $request->get('sort_by');
+        $sortDirection   = $request->get('sort_direction') === 'desc' ? 'desc' : 'asc'; // default asc
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'name';
+        }
+
+        $q->orderBy($sortBy, $sortDirection);
+
+        $data['subjects'] = $q->paginate(20)->withQueryString();
+
+        // kirim nilai filter & sort ke view
+        $data['filter_q']       = $search;
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar Subject');
 
@@ -83,7 +105,7 @@ class SubjectController extends Controller
         $subject = Subject::findOrFail($id);
 
         $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:subjects,name,'.$subject->id.',id'],
+            'name' => ['required', 'string', 'max:100', 'unique:subjects,name,' . $subject->id . ',id'],
             'description' => ['nullable', 'string'],
         ]);
 

@@ -1,11 +1,3 @@
-{{-- !!!
-Ada masalah yang perlu konfirmasi:
-1. Apakah fitur reset urutan nomor surat dihapus? Karena di controller, permission untuk reset juga dihapus.
-Jika iya, maka bagian tracker di view ini perlu diupdate untuk menghilangkan tombol reset.
-2. Apakah fitur delete nomor surat ditambahkan? Karena di controller, permission untuk delete ditambahkan.
-Jika iya, maka bagian tabel nomor surat perlu diupdate untuk menampilkan tombol delete.
-3. Apakah perlu soft delete untuk nomor surat? Karena jika pakai SoftDeletes, reset urutan tidak perlu dihapus. Jika tidak, maka reset urutan perlu dihapus agar tidak ada nomor ganda.
---}}
 @extends('panel.layouts.app')
 
 @section('content')
@@ -17,61 +9,88 @@ Jika iya, maka bagian tabel nomor surat perlu diupdate untuk menampilkan tombol 
                 <div class="col-sm-12">
                     @include('panel._message')
 
-                    {{-- FILTER & SORTING --}}
+                    {{-- FILTER, SEARCH & SORTING --}}
                     <form action="{{ route('referencenumber.list') }}" method="GET" class="row g-2 mb-3">
+                        {{-- Keyword (ref / tipe surat / pembuat) --}}
+                        <div class="col-md-3">
+                            <input type="text" name="keyword" class="form-control form-control-sm"
+                                placeholder="Cari nomor / tipe surat / pembuat" value="{{ $filter_keyword ?? '' }}">
+                        </div>
+
+                        {{-- Jenis Surat --}}
                         <div class="col-md-2">
-                            <select name="letter_type_id" class="form-select">
+                            <select name="letter_type_id" class="form-select form-select-sm">
                                 <option value="">-- Semua Jenis Surat --</option>
                                 @foreach ($letterTypes as $type)
                                     <option value="{{ $type->id }}"
-                                        {{ request('letter_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ ($filter_letter_type ?? '') == $type->id ? 'selected' : '' }}>
                                         {{ $type->subject }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
+
+                        {{-- Tahun --}}
                         <div class="col-md-2">
-                            <input type="number" name="year" class="form-control" placeholder="Tahun"
-                                value="{{ request('year') }}">
+                            <input type="number" name="year" class="form-control form-control-sm" placeholder="Tahun"
+                                value="{{ $filter_year ?? '' }}">
                         </div>
+
+                        {{-- Bulan --}}
                         <div class="col-md-2">
-                            <select name="month" class="form-select">
+                            <select name="month" class="form-select form-select-sm">
                                 <option value="">-- Bulan --</option>
                                 @for ($m = 1; $m <= 12; $m++)
-                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                    <option value="{{ $m }}" {{ ($filter_month ?? '') == $m ? 'selected' : '' }}>
                                         {{ date('F', mktime(0, 0, 0, $m, 1)) }}
                                     </option>
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <select name="user_id" class="form-select">
+
+                        {{-- Pembuat --}}
+                        <div class="col-md-3">
+                            <select name="user_id" class="form-select form-select-sm">
                                 <option value="">-- Pembuat --</option>
                                 @foreach ($users as $user)
                                     <option value="{{ $user->id }}"
-                                        {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                        {{ ($filter_user ?? '') == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4 d-flex">
-                            <select name="sort_by" class="form-select me-2">
-                                <option value="">-- Urutkan --</option>
-                                <option value="ref" {{ request('sort_by') == 'ref' ? 'selected' : '' }}>Nomor Surat
-                                </option>
-                                <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>
-                                    Tanggal</option>
-                                <option value="serial_number"
-                                    {{ request('sort_by') == 'serial_number' ? 'selected' : '' }}>Nomor Urut</option>
-                            </select>
-                            <select name="sort_direction" class="form-select me-2">
-                                <option value="asc" {{ request('sort_direction') == 'asc' ? 'selected' : '' }}>ASC
-                                </option>
-                                <option value="desc" {{ request('sort_direction') == 'desc' ? 'selected' : '' }}>DESC
-                                </option>
-                            </select>
-                            <button class="btn btn-primary">Filter</button>
+
+                        {{-- Sort by + direction --}}
+                        <div class="col-md-3 mt-2">
+                            <div class="d-flex gap-2">
+                                <select name="sort_by" class="form-select form-select-sm">
+                                    <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                        Tanggal
+                                    </option>
+                                    <option value="ref" {{ ($sort_by ?? '') == 'ref' ? 'selected' : '' }}>
+                                        Nomor Surat
+                                    </option>
+                                    <option value="serial_number"
+                                        {{ ($sort_by ?? '') == 'serial_number' ? 'selected' : '' }}>
+                                        Nomor Urut
+                                    </option>
+                                </select>
+                                <select name="sort_direction" class="form-select form-select-sm">
+                                    <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>
+                                        ASC
+                                    </option>
+                                    <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                        DESC
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- Tombol --}}
+                        <div class="col-md-3 mt-2 d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary w-100">Filter</button>
+                            <a href="{{ route('referencenumber.list') }}" class="btn btn-sm btn-light w-100">Reset</a>
                         </div>
                     </form>
 
@@ -105,8 +124,8 @@ Jika iya, maka bagian tabel nomor surat perlu diupdate untuk menampilkan tombol 
                                 <tbody>
                                     @forelse($getRecord as $item)
                                         <tr>
-                                            <td>{{ $loop->iteration + ($getRecord->currentPage() - 1) * $getRecord->perPage() }}
-                                            </td>
+                                            {{-- Nomor urut berdasarkan pagination --}}
+                                            <td>{{ $getRecord->firstItem() + $loop->index }}</td>
                                             <td><strong>{{ $item->ref }}</strong></td>
                                             <td>{{ $item->letterType->subject ?? '-' }}</td>
                                             <td>{{ $item->serial_number }}</td>
@@ -223,7 +242,7 @@ Jika iya, maka bagian tabel nomor surat perlu diupdate untuk menampilkan tombol 
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '/referencenumber/delete/' + id;
+                    window.location.href = '{{ url('referencenumber/delete') }}/' + id;
                 }
             });
         }

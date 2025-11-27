@@ -27,36 +27,50 @@
                                 <div class="col-md-2">
                                     <select name="status" class="form-select form-select-sm">
                                         <option value="">All Status</option>
-                                        <option value="Pending" {{ ($filter_status ?? '') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="Accepted" {{ ($filter_status ?? '') == 'Accepted' ? 'selected' : '' }}>Accepted</option>
-                                        <option value="Rejected" {{ ($filter_status ?? '') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
+                                        <option value="Pending" {{ ($filter_status ?? '') == 'Pending' ? 'selected' : '' }}>
+                                            Pending</option>
+                                        <option value="Accepted"
+                                            {{ ($filter_status ?? '') == 'Accepted' ? 'selected' : '' }}>Accepted</option>
+                                        <option value="Rejected"
+                                            {{ ($filter_status ?? '') == 'Rejected' ? 'selected' : '' }}>Rejected</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
                                     <select name="school_level" class="form-select form-select-sm">
                                         <option value="">All Level</option>
-                                        <option value="SD" {{ ($filter_school_level ?? '') == 'SD' ? 'selected' : '' }}>SD</option>
-                                        <option value="SMP" {{ ($filter_school_level ?? '') == 'SMP' ? 'selected' : '' }}>SMP</option>
-                                        <option value="SMA" {{ ($filter_school_level ?? '') == 'SMA' ? 'selected' : '' }}>SMA</option>
+                                        <option value="SD" {{ ($filter_school_level ?? '') == 'SD' ? 'selected' : '' }}>
+                                            SD</option>
+                                        <option value="SMP"
+                                            {{ ($filter_school_level ?? '') == 'SMP' ? 'selected' : '' }}>SMP</option>
+                                        <option value="SMA"
+                                            {{ ($filter_school_level ?? '') == 'SMA' ? 'selected' : '' }}>SMA</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
                                     <select name="sort_by" class="form-select form-select-sm">
-                                        <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>Sort: Created At</option>
-                                        <option value="name" {{ ($sort_by ?? '') == 'name' ? 'selected' : '' }}>Sort: Name</option>
-                                        <option value="school_level" {{ ($sort_by ?? '') == 'school_level' ? 'selected' : '' }}>Sort: School Level</option>
-                                        <option value="status" {{ ($sort_by ?? '') == 'status' ? 'selected' : '' }}>Sort: Status</option>
+                                        <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                            Sort: Created At</option>
+                                        <option value="name" {{ ($sort_by ?? '') == 'name' ? 'selected' : '' }}>Sort: Name
+                                        </option>
+                                        <option value="school_level"
+                                            {{ ($sort_by ?? '') == 'school_level' ? 'selected' : '' }}>Sort: School Level
+                                        </option>
+                                        <option value="status" {{ ($sort_by ?? '') == 'status' ? 'selected' : '' }}>Sort:
+                                            Status</option>
                                     </select>
                                 </div>
                                 <div class="col-md-1">
                                     <select name="sort_direction" class="form-select form-select-sm">
-                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>DESC</option>
-                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>ASC</option>
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC</option>
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>ASC
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="col-md-2 d-flex gap-2">
                                     <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filter</button>
-                                    <a href="{{ route('student_event.list') }}" class="btn btn-sm btn-light w-100">Reset</a>
+                                    <a href="{{ route('student_event.list') }}"
+                                        class="btn btn-sm btn-light w-100">Reset</a>
                                 </div>
                             </form>
 
@@ -91,19 +105,27 @@
                                                 <td>
                                                     {{-- Validasi status (Admin) --}}
                                                     @if (!empty($PermissionEdit))
-                                                        <form action="{{ route('student_event.update_status', $value->id) }}"
+                                                        <form
+                                                            action="{{ route('student_event.update_status', $value->id) }}"
                                                             method="POST" class="d-flex align-items-center gap-1">
                                                             @csrf
                                                             @method('PATCH')
                                                             <select name="status" class="form-select form-select-sm"
                                                                 onchange="this.form.submit()">
-                                                                <option value="Pending" {{ $value->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                                                <option value="Accepted" {{ $value->status == 'Accepted' ? 'selected' : '' }}>Accepted</option>
-                                                                <option value="Rejected" {{ $value->status == 'Rejected' ? 'selected' : '' }}>Rejected</option>
+                                                                <option value="Pending"
+                                                                    {{ $value->status == 'Pending' ? 'selected' : '' }}>
+                                                                    Pending</option>
+                                                                <option value="Accepted"
+                                                                    {{ $value->status == 'Accepted' ? 'selected' : '' }}>
+                                                                    Accepted</option>
+                                                                <option value="Rejected"
+                                                                    {{ $value->status == 'Rejected' ? 'selected' : '' }}>
+                                                                    Rejected</option>
                                                             </select>
                                                         </form>
                                                     @else
-                                                        <span class="badge
+                                                        <span
+                                                            class="badge
                                                             @if ($value->status == 'Accepted') bg-success
                                                             @elseif($value->status == 'Rejected') bg-danger
                                                             @else bg-secondary @endif">
@@ -144,6 +166,9 @@
 
                             {{-- Kalau ganti ke paginate(), taruh links di sini --}}
                             {{-- {{ $getRecord->withQueryString()->links() }} --}}
+                            <div class="mt-3">
+                                {{ $getRecord->links('pagination::bootstrap-5') }}
+                            </div>
                         </div>
                     </div>
                 </div>

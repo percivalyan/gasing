@@ -18,6 +18,63 @@
                             @endif
                         </div>
                         <div class="card-body">
+
+                            {{-- Filter & Search --}}
+                            <form method="GET" class="row gy-2 gx-2 mb-3">
+                                {{-- Keyword --}}
+                                <div class="col-md-4">
+                                    <input type="text" name="keyword" class="form-control form-control-sm"
+                                        placeholder="Search title / description" value="{{ $filter_keyword ?? '' }}">
+                                </div>
+
+                                {{-- Filter has_images --}}
+                                <div class="col-md-3">
+                                    <select name="has_images" class="form-select form-select-sm">
+                                        <option value="">All Galleries</option>
+                                        <option value="with" {{ ($filter_has_images ?? '') == 'with' ? 'selected' : '' }}>
+                                            With Images
+                                        </option>
+                                        <option value="without"
+                                            {{ ($filter_has_images ?? '') == 'without' ? 'selected' : '' }}>
+                                            Without Images
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Sort by --}}
+                                <div class="col-md-2">
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                            Sort: Created At
+                                        </option>
+                                        <option value="title" {{ ($sort_by ?? '') == 'title' ? 'selected' : '' }}>
+                                            Sort: Title
+                                        </option>
+                                        <option value="id" {{ ($sort_by ?? '') == 'id' ? 'selected' : '' }}>
+                                            Sort: ID
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Sort direction --}}
+                                <div class="col-md-2">
+                                    <select name="sort_direction" class="form-select form-select-sm">
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC
+                                        </option>
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>
+                                            ASC
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Buttons --}}
+                                <div class="col-md-2 mt-2 mt-md-0 d-flex gap-2">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filter</button>
+                                    <a href="{{ url('gallery') }}" class="btn btn-sm btn-light w-100">Reset</a>
+                                </div>
+                            </form>
+
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
@@ -34,18 +91,17 @@
                                     <tbody>
                                         @forelse ($getRecord as $value)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
+                                                {{-- Nomor urut sesuai pagination --}}
+                                                <td>{{ $getRecord->firstItem() + $loop->index }}</td>
                                                 <td>{{ $value->title }}</td>
-                                                <td>{{ Str::limit($value->description, 50) }}</td>
+                                                <td>{{ \Illuminate\Support\Str::limit($value->description, 50) }}</td>
                                                 <td>
                                                     @if ($value->images->count() > 0)
                                                         <div class="d-flex flex-wrap gap-2">
                                                             @foreach ($value->images as $img)
                                                                 <img src="{{ asset('storage/' . $img->image_path) }}"
-                                                                    alt="gallery"
-                                                                    class="rounded"
-                                                                    width="60" height="60"
-                                                                    style="object-fit: cover;">
+                                                                    alt="gallery" class="rounded" width="60"
+                                                                    height="60" style="object-fit: cover;">
                                                             @endforeach
                                                         </div>
                                                     @else
@@ -75,6 +131,11 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {{-- Pagination --}}
+                            <div class="mt-3">
+                                {{ $getRecord->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                     </div>

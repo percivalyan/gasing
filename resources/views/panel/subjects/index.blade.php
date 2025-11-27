@@ -18,12 +18,36 @@
                             @endif
                         </div>
                         <div class="card-body">
-                            <form method="GET" class="row g-2 mb-3">
-                                <div class="col-md-8">
-                                    <input type="text" name="q" class="form-control" placeholder="Search name/description..." value="{{ request('q') }}">
+                            {{-- Search & Sorting --}}
+                            <form method="GET" class="row gy-2 gx-2 mb-3">
+                                <div class="col-md-6">
+                                    <input type="text" name="q" class="form-control form-control-sm"
+                                        placeholder="Search name / description..." value="{{ $filter_q ?? '' }}">
                                 </div>
-                                <div class="col-md-4 d-grid">
-                                    <button class="btn btn-outline-secondary">Search</button>
+
+                                <div class="col-md-3">
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="name" {{ ($sort_by ?? '') == 'name' ? 'selected' : '' }}>
+                                            Sort: Name
+                                        </option>
+                                        <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                            Sort: Created At
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-1">
+                                    <select name="sort_direction" class="form-select form-select-sm">
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>ASC
+                                        </option>
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2 d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Filter</button>
+                                    <a href="{{ route('subjects.index') }}" class="btn btn-sm btn-light w-100">Reset</a>
                                 </div>
                             </form>
 
@@ -40,18 +64,21 @@
                                     <tbody>
                                         @forelse ($subjects as $s)
                                             <tr>
-                                                <td>{{ $loop->iteration + ($subjects->currentPage()-1)*$subjects->perPage() }}</td>
+                                                <td>{{ $subjects->firstItem() + $loop->index }}</td>
                                                 <td>{{ $s->name }}</td>
                                                 <td>{{ $s->description ?? '-' }}</td>
                                                 <td class="text-end">
                                                     @if (!empty($PermissionEdit))
-                                                        <a href="{{ route('subjects.edit', $s->id) }}" class="btn btn-sm btn-warning me-1">Edit</a>
+                                                        <a href="{{ route('subjects.edit', $s->id) }}"
+                                                            class="btn btn-sm btn-warning me-1">Edit</a>
                                                     @endif
                                                     @if (!empty($PermissionDelete))
-                                                        <form action="{{ route('subjects.destroy', $s->id) }}" method="POST" class="d-inline">
+                                                        <form action="{{ route('subjects.destroy', $s->id) }}"
+                                                            method="POST" class="d-inline"
+                                                            onsubmit="return confirm('Yakin ingin menghapus subject ini?')">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus subject ini?')">Delete</button>
+                                                            <button class="btn btn-sm btn-danger">Delete</button>
                                                         </form>
                                                     @endif
                                                 </td>
@@ -65,13 +92,13 @@
                                 </table>
                             </div>
 
-                            <div class="mt-3">
-                                {{ $subjects->withQueryString()->links() }}
+                            <div class="mt-3 d-flex justify-content-end">
+                                {{ $subjects->withQueryString()->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-     </div>
+    </div>
 @endsection

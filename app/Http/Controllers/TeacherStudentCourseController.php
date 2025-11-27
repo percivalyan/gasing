@@ -23,21 +23,68 @@ class TeacherStudentCourseController extends Controller
         $PermissionRole = PermissionRole::getPermission('Assign Teacher', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
+        // Permission tombol
+        $data['PermissionAdd']    = PermissionRole::getPermission('Assign Teacher', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Assign Teacher', Auth::user()->role_id);
+        $data['PermissionDelete'] = PermissionRole::getPermission('Edit Assign Teacher', Auth::user()->role_id);
+
         $teacherId = $request->input('teacher_id');
         $studentId = $request->input('student_course_id');
         $status    = $request->input('status');
+        $keyword   = $request->input('keyword');
 
-        $q = TeacherStudentCourse::with(['teacher.role', 'studentCourse'])
-            ->when($teacherId, fn($qq) => $qq->where('teacher_id', $teacherId))
-            ->when($studentId, fn($qq) => $qq->where('student_course_id', $studentId))
-            ->when($status, fn($qq) => $qq->where('status', $status))
-            ->orderBy('created_at', 'desc');
+        $query = TeacherStudentCourse::with(['teacher.role', 'studentCourse']);
 
-        $data['records']  = $q->paginate(25)->appends($request->query());
+        // SEARCH: nama guru / nama siswa / level
+        if (!empty($keyword)) {
+            $query->where(function ($q) use ($keyword) {
+                $q->whereHas('teacher', function ($sub) use ($keyword) {
+                    $sub->where('name', 'like', '%' . $keyword . '%');
+                })->orWhereHas('studentCourse', function ($sub) use ($keyword) {
+                    $sub->where('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('school_level', 'like', '%' . $keyword . '%');
+                });
+            });
+        }
+
+        // FILTER
+        if (!empty($teacherId)) {
+            $query->where('teacher_id', $teacherId);
+        }
+
+        if (!empty($studentId)) {
+            $query->where('student_course_id', $studentId);
+        }
+
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        // SORTING (whitelist)
+        $allowedSortBy = ['created_at', 'start_date', 'end_date', 'status'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION
+        $data['records'] = $query->paginate(25)->appends($request->query());
+
+        // Data guru & siswa untuk filter
         $data['teachers'] = User::whereHas('role', fn($r) => $r->where('name', 'Guru Les Gasing'))
             ->orderBy('name')->get();
+
         $data['students'] = StudentCourse::orderBy('name')->get();
-        $data['selected'] = compact('teacherId', 'studentId', 'status');
+
+        // simpan nilai filter & sort ke view
+        $data['filter_keyword'] = $keyword;
+        $data['selected']       = compact('teacherId', 'studentId', 'status');
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar penugasan guru-siswa');
 

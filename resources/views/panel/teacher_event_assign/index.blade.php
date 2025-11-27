@@ -18,10 +18,17 @@
                         </div>
 
                         <div class="card-body">
-                            {{-- Filter --}}
-                            <form class="row g-2 mb-3" method="GET" action="{{ route('event-assign.index') }}">
-                                <div class="col-md-4">
-                                    <select name="teacher_event_id" class="form-control">
+                            {{-- Filter & Search --}}
+                            <form class="row gy-2 gx-2 mb-3" method="GET" action="{{ route('event-assign.index') }}">
+                                {{-- Keyword --}}
+                                <div class="col-md-3">
+                                    <input type="text" name="keyword" class="form-control form-control-sm"
+                                        placeholder="Cari guru / siswa / level" value="{{ $filter_keyword ?? '' }}">
+                                </div>
+
+                                {{-- Teacher Event --}}
+                                <div class="col-md-3">
+                                    <select name="teacher_event_id" class="form-select form-select-sm">
                                         <option value="">Semua Teacher Event</option>
                                         @foreach ($teachers as $t)
                                             <option value="{{ $t->id }}"
@@ -31,8 +38,10 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-4">
-                                    <select name="student_event_id" class="form-control">
+
+                                {{-- Student Event --}}
+                                <div class="col-md-3">
+                                    <select name="student_event_id" class="form-select form-select-sm">
                                         <option value="">Semua Student Event</option>
                                         @foreach ($students as $s)
                                             <option value="{{ $s->id }}"
@@ -44,18 +53,57 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <select name="status" class="form-control">
+
+                                {{-- Status --}}
+                                <div class="col-md-3">
+                                    <select name="status" class="form-select form-select-sm">
                                         <option value="">Semua Status</option>
                                         @foreach (['Active', 'Inactive'] as $st)
                                             <option value="{{ $st }}"
-                                                {{ request('status') == $st ? 'selected' : '' }}>{{ $st }}
+                                                {{ request('status') == $st ? 'selected' : '' }}>
+                                                {{ $st }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 d-grid">
-                                    <button class="btn btn-outline-secondary" type="submit">Filter</button>
+
+                                {{-- Sort by --}}
+                                <div class="col-md-3 mt-2">
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="created_at"
+                                            {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                            Sort: Dibuat
+                                        </option>
+                                        <option value="start_date"
+                                            {{ ($sort_by ?? '') == 'start_date' ? 'selected' : '' }}>
+                                            Sort: Mulai
+                                        </option>
+                                        <option value="end_date" {{ ($sort_by ?? '') == 'end_date' ? 'selected' : '' }}>
+                                            Sort: Selesai
+                                        </option>
+                                        <option value="status" {{ ($sort_by ?? '') == 'status' ? 'selected' : '' }}>
+                                            Sort: Status
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Sort direction --}}
+                                <div class="col-md-2 mt-2">
+                                    <select name="sort_direction" class="form-select form-select-sm">
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>
+                                            ASC
+                                        </option>
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Tombol --}}
+                                <div class="col-md-4 mt-2 d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Filter</button>
+                                    <a href="{{ route('event-assign.index') }}"
+                                        class="btn btn-sm btn-light w-100">Reset</a>
                                 </div>
                             </form>
 
@@ -76,8 +124,8 @@
                                     <tbody>
                                         @forelse ($records as $row)
                                             <tr>
-                                                <td>{{ ($records->currentPage() - 1) * $records->perPage() + $loop->iteration }}
-                                                </td>
+                                                {{-- nomor urut berbasis pagination --}}
+                                                <td>{{ $records->firstItem() + $loop->index }}</td>
                                                 <td>{{ $row->teacherEvent->name ?? '-' }}</td>
                                                 <td>{{ $row->studentEvent->name ?? '-' }}</td>
                                                 <td>{{ $row->studentEvent->school_level ?? '-' }}</td>
@@ -104,7 +152,8 @@
                                                     <form action="{{ route('event-assign.delete', $row->id) }}"
                                                         method="POST" class="d-inline"
                                                         onsubmit="return confirm('Yakin ingin menghapus penugasan ini?')">
-                                                        @csrf @method('DELETE')
+                                                        @csrf
+                                                        @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                                     </form>
                                                 </td>
@@ -119,7 +168,7 @@
                             </div>
 
                             <div class="mt-3">
-                                {{ $records->links() }}
+                                {{ $records->links('pagination::bootstrap-5') }}
                             </div>
 
                         </div>

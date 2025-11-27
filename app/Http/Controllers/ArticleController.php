@@ -11,20 +11,62 @@ use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Article', Auth::user()->role_id);
         if (empty($PermissionRole)) {
             abort(404);
         }
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Article', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Article', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Article', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Article', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Article', Auth::user()->role_id);
 
-        $data['getRecord'] = Article::with('category', 'user')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Query dasar dengan relasi
+        $query = Article::with('category', 'user');
+
+        // SEARCH: title / summary / content
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', '%' . $keyword . '%')
+                    ->orWhere('summary', 'like', '%' . $keyword . '%')
+                    ->orWhere('content', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // FILTER: status (draft/published)
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // FILTER: category
+        if (!empty($request->category_id)) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // SORTING
+        $allowedSortBy    = ['created_at', 'title', 'status'];
+        $sortBy           = $request->get('sort_by');
+        $sortDirectionRaw = $request->get('sort_direction');
+
+        $sortDirection = $sortDirectionRaw === 'asc' ? 'asc' : 'desc';
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION (10 per halaman)
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Data tambahan untuk filter di view
+        $data['categories']        = Category::orderBy('name')->get();
+        $data['filter_keyword']    = $request->keyword;
+        $data['filter_status']     = $request->status;
+        $data['filter_category_id'] = $request->category_id;
+        $data['sort_by']           = $sortBy;
+        $data['sort_direction']    = $sortDirection;
 
         return view('panel.article.list', $data);
     }
@@ -48,20 +90,20 @@ class ArticleController extends Controller
         }
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'summary' => 'required|string|max:500',
-            'content' => 'required|string',
+            'title'       => 'required|string|max:255',
+            'summary'     => 'required|string|max:500',
+            'content'     => 'required|string',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
-        $article = new Article();
-        $article->title = trim($request->title);
-        $article->slug = Str::slug($request->title) . '-' . Str::random(5);
-        $article->summary = trim($request->summary);
-        $article->content = $request->content;
+        $article             = new Article();
+        $article->title      = trim($request->title);
+        $article->slug       = Str::slug($request->title) . '-' . Str::random(5);
+        $article->summary    = trim($request->summary);
+        $article->content    = $request->content;
         $article->category_id = $request->category_id;
-        $article->user_id = Auth::id();
-        $article->status = $request->status ?? 'draft';
+        $article->user_id    = Auth::id();
+        $article->status     = $request->status ?? 'draft';
 
         if ($request->hasFile('image_path')) {
             $article->image_path = $request->file('image_path')->store('articles', 'public');
@@ -79,7 +121,7 @@ class ArticleController extends Controller
             abort(404);
         }
 
-        $data['getRecord'] = Article::findOrFail($id);
+        $data['getRecord']   = Article::findOrFail($id);
         $data['getCategory'] = Category::orderBy('name')->get();
 
         return view('panel.article.edit', $data);
@@ -93,18 +135,18 @@ class ArticleController extends Controller
         }
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'summary' => 'required|string|max:500',
-            'content' => 'required|string',
+            'title'       => 'required|string|max:255',
+            'summary'     => 'required|string|max:500',
+            'content'     => 'required|string',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
-        $article = Article::findOrFail($id);
-        $article->title = trim($request->title);
-        $article->summary = trim($request->summary);
-        $article->content = $request->content;
+        $article              = Article::findOrFail($id);
+        $article->title       = trim($request->title);
+        $article->summary     = trim($request->summary);
+        $article->content     = $request->content;
         $article->category_id = $request->category_id;
-        $article->status = $request->status ?? 'draft';
+        $article->status      = $request->status ?? 'draft';
 
         if ($request->hasFile('image_path')) {
             $article->image_path = $request->file('image_path')->store('articles', 'public');

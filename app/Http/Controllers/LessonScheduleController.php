@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class LessonScheduleController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Lesson Schedule', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
@@ -23,42 +23,67 @@ class LessonScheduleController extends Controller
         $data['PermissionEdit']   = PermissionRole::getPermission('Edit Lesson Schedule', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Lesson Schedule', Auth::user()->role_id);
 
-        $q = LessonSchedule::with(['teacher', 'subject'])
+        // Query dasar
+        $baseQuery = LessonSchedule::with(['teacher', 'subject'])
             ->whereHas('teacher.role', function ($qq) {
                 $qq->where('name', 'Guru Les Gasing');
             });
 
-        if ($day = request('day'))   $q->where('day_of_week', $day);
-        if ($level = request('level')) $q->where('school_level', $level);
-        if ($search = request('q')) {
-            $q->where(function ($w) use ($search) {
+        // FILTER
+        $day   = $request->get('day');
+        $level = $request->get('level');
+        $search = $request->get('q');
+
+        if (!empty($day)) {
+            $baseQuery->where('day_of_week', $day);
+        }
+
+        if (!empty($level)) {
+            $baseQuery->where('school_level', $level);
+        }
+
+        if (!empty($search)) {
+            $baseQuery->where(function ($w) use ($search) {
                 $w->where('subject_name', 'like', "%{$search}%")
-                  ->orWhereHas('subject', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
-                  ->orWhere('room', 'like', "%{$search}%")
-                  ->orWhereHas('teacher', fn($tq) => $tq->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('subject', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
+                    ->orWhere('room', 'like', "%{$search}%")
+                    ->orWhereHas('teacher', fn($tq) => $tq->where('name', 'like', "%{$search}%"));
             });
         }
 
-        $getRecord = $q->orderByRaw("FIELD(day_of_week,'Senin','Selasa','Rabu','Kamis','Jumat','Sabtu')")
-            ->orderBy('start_time')->get();
+        // DATA UNTUK TIMETABLE (tanpa paginasi, urut per hari & jam)
+        $timetableQuery = clone $baseQuery;
 
-        $data['getRecord'] = $getRecord;
+        $getRecordForMatrix = $timetableQuery
+            ->orderByRaw("FIELD(day_of_week,'Senin','Selasa','Rabu','Kamis','Jumat','Sabtu')")
+            ->orderBy('start_time')
+            ->get();
 
-        // Timetable
+        // SIAPKAN timeSlots & matrix seperti sebelumnya
         $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
         $timeSlots = [];
         $start = strtotime('07:00');
-        $end = strtotime('17:00');
-        $step = 60 * 60;
+        $end   = strtotime('17:00');
+        $step  = 60 * 60; // 1 jam
+
         for ($t = $start; $t < $end; $t += $step) {
-            $timeSlots[] = ['start' => date('H:i', $t), 'end' => date('H:i', $t + $step)];
+            $timeSlots[] = [
+                'start' => date('H:i', $t),
+                'end'   => date('H:i', $t + $step),
+            ];
         }
         $data['timeSlots'] = $timeSlots;
 
+        // Inisialisasi matrix kosong
         $matrix = [];
-        foreach ($days as $d) foreach ($timeSlots as $slot) $matrix[$d][$slot['start'] . '-' . $slot['end']] = [];
+        foreach ($days as $d) {
+            foreach ($timeSlots as $slot) {
+                $matrix[$d][$slot['start'] . '-' . $slot['end']] = [];
+            }
+        }
 
-        foreach ($getRecord as $sch) {
+        // Isi matrix berdasarkan jadwal
+        foreach ($getRecordForMatrix as $sch) {
             foreach ($timeSlots as $slot) {
                 $s1 = $slot['start'];
                 $e1 = $slot['end'];
@@ -68,6 +93,27 @@ class LessonScheduleController extends Controller
             }
         }
         $data['matrix'] = $matrix;
+
+        // SORTING & PAGINATION UNTUK TABEL BAWAH
+        $allowedSortBy = ['created_at', 'day_of_week', 'start_time', 'school_level', 'room'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $tableQuery = clone $baseQuery;
+        $tableQuery->orderBy($sortBy, $sortDirection);
+
+        $data['getRecord'] = $tableQuery->paginate(10)->withQueryString();
+
+        // simpan nilai filter & sort untuk view
+        $data['filter_day']   = $day;
+        $data['filter_level'] = $level;
+        $data['filter_q']     = $search;
+        $data['sort_by']      = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar Lesson Schedule');
 

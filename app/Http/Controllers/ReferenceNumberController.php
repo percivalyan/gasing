@@ -21,11 +21,25 @@ class ReferenceNumberController extends Controller
         $PermissionRole = PermissionRole::getPermission('ReferenceNumber', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add ReferenceNumber', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add ReferenceNumber', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete ReferenceNumber', Auth::user()->role_id);
 
         // Query dasar dengan relasi
         $query = ReferenceNumber::with(['user', 'letterType']);
+
+        // SEARCH (keyword: ref, nama tipe surat, nama pembuat)
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('ref', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('letterType', function ($sub) use ($keyword) {
+                        $sub->where('subject', 'like', '%' . $keyword . '%');
+                    })
+                    ->orWhereHas('user', function ($sub) use ($keyword) {
+                        $sub->where('name', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
 
         // FILTER
         if ($request->filled('letter_type_id')) {
@@ -41,23 +55,35 @@ class ReferenceNumberController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        // SORTING
-        if ($request->filled('sort_by')) {
-            $sortDirection = $request->get('sort_direction', 'asc');
-            $query->orderBy($request->sort_by, $sortDirection);
-        } else {
-            $query->orderBy('created_at', 'desc');
+        // SORTING dengan whitelist kolom
+        $allowedSortBy = ['ref', 'created_at', 'serial_number'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
         }
+
+        $query->orderBy($sortBy, $sortDirection);
 
         // PAGINATION (10 per halaman)
         $data['getRecord'] = $query->paginate(10)->withQueryString();
 
-        // Tracker tetap sederhana
+        // Tracker (tetap sederhana)
         $data['trackers'] = ReferenceNumberTracker::with('letterType')->get();
 
         // Data tambahan untuk filter dropdown
-        $data['letterTypes'] = LetterType::all();
-        $data['users'] = User::all();
+        $data['letterTypes'] = LetterType::orderBy('subject')->get();
+        $data['users']       = User::orderBy('name')->get();
+
+        // Simpan nilai filter/sort untuk view
+        $data['filter_keyword']     = $request->keyword;
+        $data['filter_letter_type'] = $request->letter_type_id;
+        $data['filter_year']        = $request->year;
+        $data['filter_month']       = $request->month;
+        $data['filter_user']        = $request->user_id;
+        $data['sort_by']            = $sortBy;
+        $data['sort_direction']     = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar Nomor Surat');
 

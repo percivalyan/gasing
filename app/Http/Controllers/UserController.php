@@ -296,7 +296,7 @@ class UserController extends Controller
     /**
      * List khusus Guru Les Gasing
      */
-    public function listGuruLesGasing()
+    public function listGuruLesGasing(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('User Guru Les Gasing', Auth::user()->role_id);
         if (empty($PermissionRole)) {
@@ -308,9 +308,39 @@ class UserController extends Controller
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete User Guru Les Gasing', Auth::user()->role_id);
 
         $roleId = $this->guruLesGasingRoleId();
-        $data['getRecord'] = User::where('role_id', $roleId)
-            ->orderBy('name')
-            ->get();
+
+        // Query dasar
+        $query = User::where('role_id', $roleId);
+
+        // SEARCH (q): nama / email / NIP / no WA
+        if ($request->filled('q')) {
+            $keyword = $request->q;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('email', 'like', '%' . $keyword . '%')
+                    ->orWhere('nip', 'like', '%' . $keyword . '%')
+                    ->orWhere('whatsapp_number', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // SORTING
+        $allowedSortBy = ['name', 'email', 'created_at'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'name'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINASI
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Kirim nilai filter & sort ke view
+        $data['filter_keyword'] = $request->q;
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         return view('panel.user.list_guru_les_gasing', $data);
     }

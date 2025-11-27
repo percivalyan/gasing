@@ -11,16 +11,45 @@ use Illuminate\Support\Str;
 
 class OrganizationStructureController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Organization Structure', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Organization Structure', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Organization Structure', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Organization Structure', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Organization Structure', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Organization Structure', Auth::user()->role_id);
 
-        $data['getRecord'] = OrganizationStructure::orderBy('order', 'asc')->get();
+        // Query dasar
+        $query = OrganizationStructure::query();
+
+        // SEARCH: berdasarkan nama posisi
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('position', 'like', '%' . $keyword . '%')
+                    ->orWhere('order', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // SORTING (whitelist kolom)
+        $allowedSortBy = ['order', 'position', 'created_at', 'id'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'order'; // default: urutan struktur
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION (10 per halaman)
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Simpan nilai filter/sort untuk view
+        $data['filter_keyword'] = $request->keyword;
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar struktur organisasi');
 

@@ -17,7 +17,6 @@ class AuthController extends Controller
         // ==========================
         // GENERATE MATH CAPTCHA LEBIH KOMPLEKS
         // ==========================
-        // Kita gunakan +, -, dan x (perkalian kecil)
         $operators = ['+', '-', 'x'];
         $operator  = $operators[array_rand($operators)];
 
@@ -57,9 +56,7 @@ class AuthController extends Controller
         // ==========================
         // ANTI BOT: HONEYPOT
         // ==========================
-        // Jika field "website" TERISI, hampir pasti bot
         if ($request->filled('website')) {
-            // Bisa juga pakai abort(404) atau pesan error umum
             return redirect()
                 ->back()
                 ->with('error', 'Terjadi kesalahan, silakan coba lagi.')
@@ -106,8 +103,6 @@ class AuthController extends Controller
         $expected = (int) session('login_captcha_result');
 
         if ((int) $request->captcha_answer !== $expected) {
-            // Jangan beritahu terlalu detail ke bot,
-            // tapi tetap jelas utk user
             return redirect()
                 ->back()
                 ->withErrors(['captcha_answer' => 'Jawaban captcha salah, silakan coba lagi.'])
@@ -128,11 +123,10 @@ class AuthController extends Controller
             try {
                 app(\App\Http\Controllers\AttendanceCourseController::class)->autoCheckin($request);
             } catch (\Exception $e) {
-                // Jangan gagalkan login, cukup log error
                 Log::error('Gagal auto checkin: ' . $e->getMessage());
             }
 
-            return redirect('dashboard');
+            return redirect('dashboard')->with('success', 'Login berhasil. Selamat datang!');
         } else {
             return redirect()
                 ->back()

@@ -10,18 +10,47 @@ use Illuminate\Support\Facades\Auth;
 
 class LetterTypeController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('LetterType', Auth::user()->role_id);
         if (empty($PermissionRole)) {
             abort(404);
         }
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add LetterType', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit LetterType', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add LetterType', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit LetterType', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete LetterType', Auth::user()->role_id);
 
-        $data['getRecord'] = LetterType::orderBy('subject', 'asc')->get();
+        // Query dasar
+        $query = LetterType::query();
+
+        // SEARCH: subject / code
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('subject', 'like', '%' . $keyword . '%')
+                    ->orWhere('code', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // SORTING (whitelist kolom)
+        $allowedSortBy = ['subject', 'code', 'created_at', 'id'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'subject'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION (10 per halaman)
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Simpan nilai filter/sort untuk view
+        $data['filter_keyword'] = $request->keyword;
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar Jenis Surat');
 

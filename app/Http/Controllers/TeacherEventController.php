@@ -54,7 +54,7 @@ class TeacherEventController extends Controller
         $query->orderBy($sortBy, $sortDirection);
 
         // Kalau mau pagination, ganti get() jadi paginate()
-        $data['getRecord']          = $query->get();
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
         $data['filter_keyword']     = $request->keyword;
         $data['filter_status']      = $request->status;
         $data['sort_by']            = $sortBy;
@@ -70,11 +70,11 @@ class TeacherEventController extends Controller
      */
     public function myRegistrationIndex(Request $request)
     {
-        $PermissionRole = PermissionRole::getPermission('Add Teacher Event', Auth::user()->role_id);
+        $PermissionRole = PermissionRole::getPermission('Add Teacher Event Kepala Sekolah', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
         $role = Auth::user()->role->name ?? '';
-        if ($role !== 'Kepala Sekolah') {
+        if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -96,7 +96,7 @@ class TeacherEventController extends Controller
 
         $query->orderBy('created_at', 'desc');
 
-        $data['getRecord']      = $query->get();
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
         $data['filter_keyword'] = $request->keyword;
         $data['filter_status']  = $request->status;
 
@@ -330,7 +330,7 @@ class TeacherEventController extends Controller
 
         ActivityLogger::log('CREATE', 'Registrasi Teacher Event: ' . $teacher->name);
 
-       return redirect()->route('teacher_event.my_registration')->with('success', 'Pendaftaran Student Event berhasil dikirim.');
+        return redirect()->route('teacher_event.my_registration')->with('success', 'Pendaftaran Student Event berhasil dikirim.');
     }
 
     /**

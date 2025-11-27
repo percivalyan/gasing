@@ -32,9 +32,9 @@
                     'Organization Member' => 'PermissionOrgMember',
                     'Session Log' => 'PermissionSessionLog',
                     'Teacher Event' => 'PermissionTeacherEvent',
-                    'Add Teacher Event' => 'PermissionAddTeacherEvent',
+                    'Add Teacher Event Kepala Sekolah' => 'PermissionAddTeacherEvent',
                     'Student Event' => 'PermissionStudentEvent',
-                    'Add Student Event' => 'PermissionAddStudentEvent',
+                    'Add Student Event Kepala Sekolah' => 'PermissionAddStudentEvent',
                     'User Guru Les Gasing' => 'PermissionUserGuruLesGasing',
                     'Student Course' => 'PermissionStudentCourse',
                     'Lesson Schedule' => 'PermissionLessonSchedule',
@@ -42,6 +42,12 @@
                     'Assign Teacher' => 'PermissionAssignTeacher',
                     'Assessments' => 'PermissionAssessments',
                     'Attendance' => 'PermissionAttendance',
+
+                    // Tambahan permission
+                    'Footer' => 'PermissionFooter',
+                    'Assign Teacher Event' => 'PermissionAssignTeacherEvent',
+                    'Event Schedule' => 'PermissionEventSchedule',
+                    'Event Batch' => 'PermissionEventBatch',
                 ];
 
                 // Fetch permissions into local variables dynamically
@@ -69,36 +75,35 @@
             @endphp
 
             <ul class="pc-navbar">
-
-                {{-- Dashboard --}}
+                {{-- DASHBOARD --}}
                 <li class="pc-item">
                     <a href="{{ url('dashboard') }}" class="pc-link {{ isActive(['dashboard', 'dashboard/*']) }}">
                         <span class="pc-micon"><i class="ti ti-dashboard"></i></span>
-                        <span class="pc-mtext">Dashboard</span>
+                        <span class="pc-mtext">Beranda</span>
                     </a>
                 </li>
 
-                {{-- Session Logs (hanya jika punya permission) --}}
+                {{-- SESSION LOGS --}}
                 @if ($PermissionSessionLog)
                     <li class="pc-item">
                         <a href="{{ route('session.logs') }}"
-                            class="pc-link {{ isActive(['session-logs*'], ['session.logs']) }}">
+                            class="pc-link {{ isActive(['session-logs*'], ['session.logs']) }} ">
                             <span class="pc-micon"><i class="ti ti-history"></i></span>
-                            <span class="pc-mtext">Session Logs</span>
+                            <span class="pc-mtext">Log Aktivitas</span>
                         </a>
                     </li>
                 @endif
 
                 {{-- USER & PERMISSION --}}
                 @if ($PermissionUser || $PermissionRole)
-                    <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">User & Permission</li>
+                    <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Akses Pengguna</li>
                 @endif
 
                 @if ($PermissionUser)
                     <li class="pc-item">
                         <a href="{{ url('user') }}" class="pc-link {{ isActive(['user*']) }}">
                             <span class="pc-micon"><i class="ti ti-user"></i></span>
-                            <span class="pc-mtext">User</span>
+                            <span class="pc-mtext">Pengguna</span>
                         </a>
                     </li>
                 @endif
@@ -107,7 +112,7 @@
                     <li class="pc-item">
                         <a href="{{ url('role') }}" class="pc-link {{ isActive(['role*']) }}">
                             <span class="pc-micon"><i class="ti ti-shield-check"></i></span>
-                            <span class="pc-mtext">Role Access</span>
+                            <span class="pc-mtext">Hak Akses</span>
                         </a>
                     </li>
                 @endif
@@ -121,7 +126,7 @@
                     <li class="pc-item">
                         <a href="{{ url('category') }}" class="pc-link {{ isActive(['category*']) }}">
                             <span class="pc-micon"><i class="ti ti-folders"></i></span>
-                            <span class="pc-mtext">Category</span>
+                            <span class="pc-mtext">Kategori</span>
                         </a>
                     </li>
                 @endif
@@ -130,7 +135,7 @@
                     <li class="pc-item">
                         <a href="{{ url('article') }}" class="pc-link {{ isActive(['article*']) }}">
                             <span class="pc-micon"><i class="ti ti-news"></i></span>
-                            <span class="pc-mtext">Article</span>
+                            <span class="pc-mtext">Artikel</span>
                         </a>
                     </li>
                 @endif
@@ -154,7 +159,7 @@
                     <li class="pc-item">
                         <a href="{{ url('document') }}" class="pc-link {{ isActive(['document*']) }}">
                             <span class="pc-micon"><i class="ti ti-file-text"></i></span>
-                            <span class="pc-mtext">Document</span>
+                            <span class="pc-mtext">Dokumen</span>
                         </a>
                     </li>
                 @endif
@@ -164,7 +169,7 @@
                         <a href="{{ route('referencenumber.list') }}"
                             class="pc-link {{ isActive(['referencenumber*'], ['referencenumber.*']) }}">
                             <span class="pc-micon"><i class="ti ti-hash"></i></span>
-                            <span class="pc-mtext">Reference Number</span>
+                            <span class="pc-mtext">Nomor Referensi</span>
                         </a>
                     </li>
                 @endif
@@ -179,12 +184,25 @@
                 @endif
 
                 {{-- TENTANG KAMI --}}
-                @if ($PermissionAbout)
+                @if ($PermissionAbout || $PermissionFooter)
                     <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Tentang Kami</li>
+                @endif
+
+                @if ($PermissionAbout)
                     <li class="pc-item">
                         <a href="{{ route('about.list') }}" class="pc-link {{ isActive(['about*'], ['about.*']) }}">
                             <span class="pc-micon"><i class="ti ti-info-circle"></i></span>
-                            <span class="pc-mtext">About</span>
+                            <span class="pc-mtext">Profil Website</span>
+                        </a>
+                    </li>
+                @endif
+
+                @if ($PermissionFooter)
+                    <li class="pc-item">
+                        <a href="{{ route('footer.list') }}"
+                            class="pc-link {{ isActive(['footer*'], ['footer.*']) }}">
+                            <span class="pc-micon"><i class="ti ti-layout-navbar"></i></span>
+                            <span class="pc-mtext">Footer Website</span>
                         </a>
                     </li>
                 @endif
@@ -210,12 +228,12 @@
                         <a href="{{ route('organization.member.list') }}"
                             class="pc-link {{ isActive(['organization/member*'], ['organization.member.*']) }}">
                             <span class="pc-micon"><i class="ti ti-users"></i></span>
-                            <span class="pc-mtext">Anggota</span>
+                            <span class="pc-mtext">Daftar Anggota</span>
                         </a>
                     </li>
                 @endif
 
-                {{-- EVENT GASING (hanya jika punya permission Teacher/Student Event) --}}
+                {{-- EVENT GASING --}}
                 @if ($PermissionTeacherEvent || $PermissionStudentEvent)
                     <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Event Gasing</li>
 
@@ -224,7 +242,7 @@
                             <a href="{{ route('teacher_event.list') }}"
                                 class="pc-link {{ isActive(['teacher-event*'], ['teacher_event.*']) }}">
                                 <span class="pc-micon"><i class="ti ti-calendar-event"></i></span>
-                                <span class="pc-mtext">Teacher Event</span>
+                                <span class="pc-mtext">Event Guru</span>
                             </a>
                         </li>
                     @endif
@@ -234,23 +252,30 @@
                             <a href="{{ route('student_event.list') }}"
                                 class="pc-link {{ isActive(['student-event*'], ['student_event.*']) }}">
                                 <span class="pc-micon"><i class="ti ti-calendar-stats"></i></span>
-                                <span class="pc-mtext">Student Event</span>
+                                <span class="pc-mtext">Event Siswa</span>
                             </a>
                         </li>
                     @endif
                 @endif
 
-                {{-- REGISTRASI EVENT (diasumsikan sama permission-nya) --}}
+                {{-- REGISTRASI EVENT --}}
                 @if ($PermissionAddTeacherEvent || $PermissionAddStudentEvent)
-                    <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Reg. Event Gasing
-                    </li>
+                    <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Registrasi Event</li>
 
                     @if ($PermissionAddTeacherEvent)
                         <li class="pc-item">
                             <a href="{{ route('teacher_event.formregistration') }}"
                                 class="pc-link {{ isActive(['teacher-event/formregistration'], ['teacher_event.formregistration']) }}">
                                 <span class="pc-micon"><i class="ti ti-user-plus"></i></span>
-                                <span class="pc-mtext">Teacher Registration</span>
+                                <span class="pc-mtext">Registrasi Guru</span>
+                            </a>
+                        </li>
+
+                        <li class="pc-item">
+                            <a href="{{ route('teacher_event.my_registration') }}"
+                                class="pc-link {{ isActive(['teacher-event/my-registration'], ['teacher_event.my_registration']) }}">
+                                <span class="pc-micon"><i class="ti ti-clipboard-list"></i></span>
+                                <span class="pc-mtext">Daftar Registrasi Guru</span>
                             </a>
                         </li>
                     @endif
@@ -260,7 +285,51 @@
                             <a href="{{ route('student_event.formregistration') }}"
                                 class="pc-link {{ isActive(['student-event/formregistration'], ['student_event.formregistration']) }}">
                                 <span class="pc-micon"><i class="ti ti-user-plus"></i></span>
-                                <span class="pc-mtext">Student Registration</span>
+                                <span class="pc-mtext">Registrasi Siswa</span>
+                            </a>
+                        </li>
+
+                        <li class="pc-item">
+                            <a href="{{ route('student_event.my_registration') }}"
+                                class="pc-link {{ isActive(['student-event/my-registration'], ['student_event.my_registration']) }}">
+                                <span class="pc-micon"><i class="ti ti-clipboard-list"></i></span>
+                                <span class="pc-mtext">Daftar Registrasi Siswa</span>
+                            </a>
+                        </li>
+                    @endif
+                @endif
+
+                {{-- MANAJEMEN EVENT GASING (RELASI & JADWAL) --}}
+                @if ($PermissionAssignTeacherEvent || $PermissionEventSchedule || $PermissionEventBatch)
+                    <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Manajemen Event
+                        Gasing</li>
+
+                    @if ($PermissionAssignTeacherEvent)
+                        <li class="pc-item">
+                            <a href="{{ route('event-assign.index') }}"
+                                class="pc-link {{ isActive(['event-assign*'], ['event-assign.*']) }}">
+                                <span class="pc-micon"><i class="ti ti-arrows-left-right"></i></span>
+                                <span class="pc-mtext">Relasi Guru & Siswa</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($PermissionEventSchedule)
+                        <li class="pc-item">
+                            <a href="{{ route('event_schedule.list') }}"
+                                class="pc-link {{ isActive(['event-schedule*'], ['event_schedule.*']) }}">
+                                <span class="pc-micon"><i class="ti ti-calendar"></i></span>
+                                <span class="pc-mtext">Jadwal Event</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($PermissionEventBatch)
+                        <li class="pc-item">
+                            <a href="{{ route('event_batch.list') }}"
+                                class="pc-link {{ isActive(['event-batch*'], ['event_batch.*']) }}">
+                                <span class="pc-micon"><i class="ti ti-stack-2"></i></span>
+                                <span class="pc-mtext">Angkatan Event</span>
                             </a>
                         </li>
                     @endif
@@ -283,7 +352,7 @@
                         <a href="{{ route('assign.index') }}"
                             class="pc-link {{ isActive(['assign*'], ['assign.*']) }}">
                             <span class="pc-micon"><i class="ti ti-user-check"></i></span>
-                            <span class="pc-mtext">Assign Teacher</span>
+                            <span class="pc-mtext">Penugasan Guru</span>
                         </a>
                     </li>
                 @endif
@@ -303,7 +372,7 @@
                         <a href="{{ route('student_course.list') }}"
                             class="pc-link {{ isActive(['student-course*'], ['student_course.*']) }}">
                             <span class="pc-micon"><i class="ti ti-users"></i></span>
-                            <span class="pc-mtext">Student Course</span>
+                            <span class="pc-mtext">Kelas Siswa</span>
                         </a>
                     </li>
                 @endif
@@ -313,7 +382,7 @@
                         <a href="{{ route('lesson_schedule.list') }}"
                             class="pc-link {{ isActive(['lesson-schedule*'], ['lesson_schedule.*']) }}">
                             <span class="pc-micon"><i class="ti ti-calendar-time"></i></span>
-                            <span class="pc-mtext">Lesson Schedule</span>
+                            <span class="pc-mtext">Jadwal Pelajaran</span>
                         </a>
                     </li>
                 @endif
@@ -338,7 +407,7 @@
                     </li>
                 @endif
 
-                {{-- LES GASING (Guru / Umum) --}}
+                {{-- LES GASING (GURU / UMUM) --}}
                 @if ($PermissionSubject)
                     <li class="pc-divider mt-3 mb-1 text-uppercase text-muted small fw-bold ps-3">Les Gasing</li>
 
@@ -351,8 +420,7 @@
                     </li>
                 @endif
 
-                {{-- Spacer --}}
-                <div class="py-5"></div>
+                <div class="py-3"></div>
 
             </ul>
         </div>

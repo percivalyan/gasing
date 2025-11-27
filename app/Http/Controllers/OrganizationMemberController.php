@@ -12,19 +12,62 @@ use Illuminate\Support\Str;
 
 class OrganizationMemberController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Organization Member', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Organization Member', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Organization Member', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Organization Member', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Organization Member', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Organization Member', Auth::user()->role_id);
 
-        $data['getRecord'] = OrganizationMember::with('structure')
-            ->orderBy('structure_id')
-            ->orderBy('order', 'asc')
-            ->get();
+        // Query dasar dengan relasi
+        $query = OrganizationMember::with('structure');
+
+        // SEARCH: nama anggota / nama posisi
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhereHas('structure', function ($sub) use ($keyword) {
+                        $sub->where('position', 'like', '%' . $keyword . '%');
+                    });
+            });
+        }
+
+        // FILTER: berdasarkan struktur (posisi)
+        if (!empty($request->structure_id)) {
+            $query->where('structure_id', $request->structure_id);
+        }
+
+        // SORTING (whitelist kolom)
+        $allowedSortBy = ['structure_id', 'order', 'name', 'created_at', 'id'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'structure_id'; // default: per posisi
+        }
+
+        // Tetap jaga urutan struktur -> order
+        if ($sortBy === 'structure_id') {
+            $query->orderBy('structure_id', $sortDirection)
+                ->orderBy('order', 'asc');
+        } else {
+            $query->orderBy($sortBy, $sortDirection);
+        }
+
+        // PAGINATION (10 per halaman)
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Data untuk filter dropdown
+        $data['structures'] = OrganizationStructure::orderBy('order', 'asc')->get();
+
+        // Simpan nilai filter/sort untuk view
+        $data['filter_keyword']     = $request->keyword;
+        $data['filter_structure_id'] = $request->structure_id;
+        $data['sort_by']            = $sortBy;
+        $data['sort_direction']     = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar anggota organisasi');
 

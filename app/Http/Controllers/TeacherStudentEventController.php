@@ -25,17 +25,54 @@ class TeacherStudentEventController extends Controller
         $teacherId = $request->input('teacher_event_id');
         $studentId = $request->input('student_event_id');
         $status    = $request->input('status');
+        $keyword   = $request->input('keyword');
 
-        $q = TeacherStudentEvent::with(['teacherEvent', 'studentEvent'])
-            ->when($teacherId, fn($qq) => $qq->where('teacher_event_id', $teacherId))
-            ->when($studentId, fn($qq) => $qq->where('student_event_id', $studentId))
-            ->when($status, fn($qq) => $qq->where('status', $status))
-            ->orderBy('created_at', 'desc');
+        $query = TeacherStudentEvent::with(['teacherEvent', 'studentEvent']);
 
-        $data['records']  = $q->paginate(25)->appends($request->query());
+        // SEARCH: nama teacher event / nama student / level
+        if (!empty($keyword)) {
+            $query->where(function ($q) use ($keyword) {
+                $q->whereHas('teacherEvent', function ($sub) use ($keyword) {
+                    $sub->where('name', 'like', '%' . $keyword . '%');
+                })->orWhereHas('studentEvent', function ($sub) use ($keyword) {
+                    $sub->where('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('school_level', 'like', '%' . $keyword . '%');
+                });
+            });
+        }
+
+        // FILTER
+        if (!empty($teacherId)) {
+            $query->where('teacher_event_id', $teacherId);
+        }
+        if (!empty($studentId)) {
+            $query->where('student_event_id', $studentId);
+        }
+        if (!empty($status)) {
+            $query->where('status', $status);
+        }
+
+        // SORTING (whitelist)
+        $allowedSortBy = ['created_at', 'start_date', 'end_date', 'status'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION
+        $data['records']  = $query->paginate(25)->appends($request->query());
         $data['teachers'] = TeacherEvent::orderBy('name')->get();
         $data['students'] = StudentEvent::orderBy('name')->get();
-        $data['selected'] = compact('teacherId', 'studentId', 'status');
+
+        // simpan nilai filter & sort ke view
+        $data['filter_keyword']    = $keyword;
+        $data['selected']          = compact('teacherId', 'studentId', 'status');
+        $data['sort_by']           = $sortBy;
+        $data['sort_direction']    = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar penugasan teacher_event ↔ student_event');
 

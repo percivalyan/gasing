@@ -9,18 +9,67 @@ use Illuminate\Support\Facades\Auth;
 
 class DocumentController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Document', Auth::user()->role_id);
         if (empty($PermissionRole)) {
             abort(404);
         }
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Document', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Document', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Document', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Document', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Document', Auth::user()->role_id);
 
-        $data['getRecord'] = Document::with('user')->orderBy('created_at', 'desc')->get();
+        // Query dasar
+        $query = Document::with('user');
+
+        // SEARCH: name / description / uploader name
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('description', 'like', '%' . $keyword . '%');
+            })->orWhereHas('user', function ($u) use ($keyword) {
+                $u->where('name', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // FILTER: visibility (public / private)
+        if (!empty($request->visibility)) {
+            $query->where('visibility', $request->visibility);
+        }
+
+        // FILTER: has_file (all / with / without)
+        if (!empty($request->has_file)) {
+            if ($request->has_file === 'with') {
+                $query->whereNotNull('file_path');
+            } elseif ($request->has_file === 'without') {
+                $query->whereNull('file_path');
+            }
+        }
+
+        // SORTING
+        $allowedSortBy    = ['created_at', 'name', 'visibility'];
+        $sortBy           = $request->get('sort_by');
+        $sortDirectionRaw = $request->get('sort_direction');
+
+        $sortDirection = $sortDirectionRaw === 'asc' ? 'asc' : 'desc';
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Kirim nilai filter ke view
+        $data['filter_keyword']   = $request->keyword;
+        $data['filter_visibility'] = $request->visibility;
+        $data['filter_has_file']  = $request->has_file;
+        $data['sort_by']          = $sortBy;
+        $data['sort_direction']   = $sortDirection;
+
         return view('panel.document.list', $data);
     }
 

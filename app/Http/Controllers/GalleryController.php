@@ -13,17 +13,59 @@ use App\Helpers\ActivityLogger;
 
 class GalleryController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Gallery', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Gallery', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Gallery', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Gallery', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Gallery', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Gallery', Auth::user()->role_id);
-        $data['getRecord'] = Gallery::with('user', 'images')->orderBy('created_at', 'desc')->get();
+
+        // Query dasar
+        $query = Gallery::with('user', 'images');
+
+        // SEARCH: title / description
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', '%' . $keyword . '%')
+                    ->orWhere('description', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // FILTER: has_images (all / with / without)
+        if (!empty($request->has_images)) {
+            if ($request->has_images === 'with') {
+                $query->whereHas('images');
+            } elseif ($request->has_images === 'without') {
+                $query->doesntHave('images');
+            }
+        }
+
+        // SORTING
+        $allowedSortBy    = ['created_at', 'title', 'id'];
+        $sortBy           = $request->get('sort_by');
+        $sortDirectionRaw = $request->get('sort_direction');
+
+        $sortDirection = $sortDirectionRaw === 'asc' ? 'asc' : 'desc';
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINATION
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Kirim nilai filter ke view
+        $data['filter_keyword']   = $request->keyword;
+        $data['filter_has_images'] = $request->has_images;
+        $data['sort_by']          = $sortBy;
+        $data['sort_direction']   = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar galeri');
+
         return view('panel.gallery.list', $data);
     }
 
@@ -42,16 +84,16 @@ class GalleryController extends Controller
         if (empty($PermissionRole)) abort(404);
 
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048'
+            'images.*'    => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
         $gallery = Gallery::create([
-            'title' => trim($request->title),
-            'slug' => Str::slug($request->title) . '-' . Str::random(5),
+            'title'       => trim($request->title),
+            'slug'        => Str::slug($request->title) . '-' . Str::random(5),
             'description' => $request->description,
-            'user_id' => Auth::id()
+            'user_id'     => Auth::id()
         ]);
 
         if ($request->hasFile('images')) {
@@ -81,23 +123,26 @@ class GalleryController extends Controller
 
     public function update($id, Request $request)
     {
+        $PermissionRole = PermissionRole::getPermission('Edit Gallery', Auth::user()->role_id);
+        if (empty($PermissionRole)) abort(404);
+
         $gallery = Gallery::with('images')->findOrFail($id);
 
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048'
+            'images.*'    => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
-        $gallery->title = trim($request->title);
-        $gallery->slug = Str::slug($request->title) . '-' . Str::random(5);
+        $gallery->title       = trim($request->title);
+        $gallery->slug        = Str::slug($request->title) . '-' . Str::random(5);
         $gallery->description = $request->description;
         $gallery->save();
 
-        // 🔥 Hapus gambar yang dicentang
+        // Hapus gambar yang dicentang
         if ($request->has('delete_images')) {
             foreach ($request->delete_images as $imageId) {
-                $image = \App\Models\GalleryImage::find($imageId);
+                $image = GalleryImage::find($imageId);
                 if ($image) {
                     Storage::disk('public')->delete($image->image_path);
                     $image->delete();
@@ -105,11 +150,11 @@ class GalleryController extends Controller
             }
         }
 
-        // 🔥 Upload gambar baru (bisa banyak)
+        // Upload gambar baru
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $imageFile) {
                 $path = $imageFile->store('galleries', 'public');
-                \App\Models\GalleryImage::create([
+                GalleryImage::create([
                     'gallery_id' => $gallery->id,
                     'image_path' => $path,
                 ]);

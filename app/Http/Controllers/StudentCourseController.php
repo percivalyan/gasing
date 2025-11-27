@@ -15,16 +15,53 @@ class StudentCourseController extends Controller
     /**
      * Menampilkan daftar Student Course
      */
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Student Course', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Student Course', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Student Course', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Student Course', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Student Course', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Student Course', Auth::user()->role_id);
 
-        $data['getRecord'] = StudentCourse::orderBy('created_at', 'desc')->get();
+        // Query dasar
+        $query = StudentCourse::query();
+
+        // SEARCH: nama / NIK / sekolah / distrik
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', '%' . $keyword . '%')
+                    ->orWhere('nik', 'like', '%' . $keyword . '%')
+                    ->orWhere('school_origin', 'like', '%' . $keyword . '%')
+                    ->orWhere('origin_district', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // FILTER: level sekolah
+        if (!empty($request->school_level)) {
+            $query->where('school_level', $request->school_level);
+        }
+
+        // SORTING (whitelist kolom)
+        $allowedSortBy = ['created_at', 'name', 'school_level', 'nik'];
+        $sortBy        = $request->get('sort_by');
+        $sortDirection = $request->get('sort_direction') === 'asc' ? 'asc' : 'desc';
+
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+
+        $query->orderBy($sortBy, $sortDirection);
+
+        // PAGINASI
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // simpan nilai filter & sort untuk view
+        $data['filter_keyword']     = $request->keyword;
+        $data['filter_school_level'] = $request->school_level;
+        $data['sort_by']            = $sortBy;
+        $data['sort_direction']     = $sortDirection;
 
         ActivityLogger::log('READ', 'Melihat daftar Student Course');
 

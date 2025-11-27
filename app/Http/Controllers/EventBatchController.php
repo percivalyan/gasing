@@ -10,18 +10,60 @@ use Illuminate\Support\Str;
 
 class EventBatchController extends Controller
 {
-    public function list()
+    public function list(Request $request)
     {
         $PermissionRole = PermissionRole::getPermission('Event Batch', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
-        $data['PermissionAdd'] = PermissionRole::getPermission('Add Event Batch', Auth::user()->role_id);
-        $data['PermissionEdit'] = PermissionRole::getPermission('Edit Event Batch', Auth::user()->role_id);
+        $data['PermissionAdd']    = PermissionRole::getPermission('Add Event Batch', Auth::user()->role_id);
+        $data['PermissionEdit']   = PermissionRole::getPermission('Edit Event Batch', Auth::user()->role_id);
         $data['PermissionDelete'] = PermissionRole::getPermission('Delete Event Batch', Auth::user()->role_id);
 
-        $data['getRecord'] = EventBatch::orderBy('event_year', 'desc')
-            ->orderBy('event_phase', 'asc')
-            ->get();
+        // Query dasar
+        $query = EventBatch::query();
+
+        // SEARCH: tahun / tahap / nama lengkap
+        if (!empty($request->keyword)) {
+            $keyword = $request->keyword;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('event_year', 'like', '%' . $keyword . '%')
+                    ->orWhere('event_phase', 'like', '%' . $keyword . '%')
+                    ->orWhere('full_batch_name', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        // FILTER: tahun
+        if (!empty($request->event_year)) {
+            $query->where('event_year', $request->event_year);
+        }
+
+        // SORTING (whitelist)
+        $allowedSortBy    = ['event_year', 'event_phase', 'created_at'];
+        $sortBy           = $request->get('sort_by');
+        $sortDirectionRaw = $request->get('sort_direction');
+
+        $sortDirection = $sortDirectionRaw === 'asc' ? 'asc' : 'desc';
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'event_year'; // default
+        }
+
+        $query->orderBy($sortBy, $sortDirection)
+            ->orderBy('event_phase', 'asc'); // supaya tahap tetap urut dalam tahun yang sama
+
+        // PAGINATION
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
+
+        // Data tahun unik untuk dropdown filter
+        $data['years'] = EventBatch::select('event_year')
+            ->distinct()
+            ->orderBy('event_year', 'desc')
+            ->pluck('event_year');
+
+        // simpan nilai filter & sort ke view
+        $data['filter_keyword'] = $request->keyword;
+        $data['filter_year']    = $request->event_year;
+        $data['sort_by']        = $sortBy;
+        $data['sort_direction'] = $sortDirection;
 
         return view('panel.event_batch.list', $data);
     }

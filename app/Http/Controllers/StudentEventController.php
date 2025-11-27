@@ -60,7 +60,7 @@ class StudentEventController extends Controller
         $query->orderBy($sortBy, $sortDirection);
 
         // Jika mau pakai pagination, ganti ->get() jadi ->paginate(20)
-        $data['getRecord'] = $query->get();
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
 
         // Untuk mempertahankan nilai filter di view
         $data['filter_status'] = $request->status;
@@ -293,11 +293,11 @@ class StudentEventController extends Controller
      */
     public function myRegistrationIndex(Request $request)
     {
-        $PermissionRole = PermissionRole::getPermission('Add Student Event', Auth::user()->role_id);
+        $PermissionRole = PermissionRole::getPermission('Add Student Event Kepala Sekolah', Auth::user()->role_id);
         if (empty($PermissionRole)) abort(404);
 
         $role = Auth::user()->role->name ?? '';
-        if ($role !== 'Kepala Sekolah') {
+        if (!in_array($role, ['Administrator', 'Kepala Sekolah'])) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -319,7 +319,7 @@ class StudentEventController extends Controller
 
         $query->orderBy('created_at', 'desc');
 
-        $data['getRecord'] = $query->get();
+        $data['getRecord'] = $query->paginate(10)->withQueryString();
         $data['filter_status'] = $request->status;
         $data['filter_keyword'] = $request->keyword;
 

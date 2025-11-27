@@ -18,6 +18,42 @@
                             @endif
                         </div>
                         <div class="card-body">
+
+                            {{-- Filter & Search --}}
+                            <form method="GET" class="row gy-2 gx-2 mb-3">
+                                <div class="col-md-4">
+                                    <input type="text" name="keyword" class="form-control form-control-sm"
+                                        placeholder="Search category name / ID" value="{{ $filter_keyword ?? '' }}">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="id" {{ ($sort_by ?? '') == 'id' ? 'selected' : '' }}>
+                                            Sort: ID
+                                        </option>
+                                        <option value="name" {{ ($sort_by ?? '') == 'name' ? 'selected' : '' }}>
+                                            Sort: Name
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <select name="sort_direction" class="form-select form-select-sm">
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC
+                                        </option>
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>
+                                            ASC
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3 d-flex gap-2">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filter</button>
+                                    <a href="{{ url('category') }}" class="btn btn-sm btn-light w-100">Reset</a>
+                                </div>
+                            </form>
+
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
@@ -33,12 +69,15 @@
                                     <tbody>
                                         @forelse ($getRecord as $value)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
+                                                {{-- Nomor urut pakai pagination --}}
+                                                <td>{{ $getRecord->firstItem() + $loop->index }}</td>
                                                 <td>{{ $value->name }}</td>
                                                 <td>
                                                     @if ($value->image_path)
                                                         <img src="{{ asset('storage/' . $value->image_path) }}"
                                                             alt="Category Image" height="40">
+                                                    @else
+                                                        -
                                                     @endif
                                                 </td>
                                                 @if (!empty($PermissionEdit) || !empty($PermissionDelete))
@@ -50,7 +89,9 @@
                                                         @if (!empty($PermissionDelete))
                                                             <a href="{{ url('category/delete/' . $value->id) }}"
                                                                 class="btn btn-sm btn-danger"
-                                                                onclick="return confirm('Are you sure you want to delete this category?');">Delete</a>
+                                                                onclick="return confirm('Are you sure you want to delete this category?');">
+                                                                Delete
+                                                            </a>
                                                         @endif
                                                     </td>
                                                 @endif
@@ -62,6 +103,11 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {{-- Pagination --}}
+                            <div class="mt-3">
+                                {{ $getRecord->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                     </div>

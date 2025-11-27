@@ -23,10 +23,43 @@ class HeadmasterRegistrationController extends Controller
 
     /**
      * Tampilkan form register khusus Kepala Sekolah
+     * + generate captcha
      */
     public function showRegistrationForm()
     {
-        return view('auth.register_headmaster');
+        // ==========================
+        // GENERATE MATH CAPTCHA
+        // ==========================
+        $operators = ['+', '-', 'x'];
+        $operator  = $operators[array_rand($operators)];
+
+        switch ($operator) {
+            case '+':
+                $a = rand(10, 99);
+                $b = rand(1, 50);
+                $result = $a + $b;
+                break;
+
+            case '-':
+                $a = rand(20, 99);
+                $b = rand(1, $a - 1);
+                $result = $a - $b;
+                break;
+
+            case 'x':
+                $a = rand(2, 9);
+                $b = rand(2, 9);
+                $result = $a * $b;
+                break;
+        }
+
+        // Simpan ke session khusus untuk register headmaster
+        session([
+            'headmaster_captcha_result'       => $result,
+            'headmaster_captcha_generated_at' => now()->timestamp,
+        ]);
+
+        return view('auth.register_headmaster', compact('a', 'b', 'operator'));
     }
 
     /**
@@ -34,6 +67,20 @@ class HeadmasterRegistrationController extends Controller
      */
     public function register(Request $request)
     {
+        // ==========================
+        // HONEYPOT: FIELD JEBATAN BOT
+        // ==========================
+        if ($request->filled('website')) {
+            // Jika field ini terisi, anggap bot dan tolak
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan, silakan coba lagi.')
+                ->withInput();
+        }
+
+        // ==========================
+        // VALIDASI FORM + CAPTCHA
+        // ==========================
         $request->validate([
             // Akun dasar
             'name'     => ['required', 'string', 'max:255'],
@@ -52,8 +99,49 @@ class HeadmasterRegistrationController extends Controller
             'last_education'  => ['nullable', 'string', 'max:30'],
             'whatsapp_number' => ['nullable', 'string', 'max:20'],
             'address'         => ['nullable', 'string'],
+
+            // Captcha
+            'captcha_answer'  => ['required', 'numeric'],
+            'form_time'       => ['required', 'integer'],
+        ], [
+            'captcha_answer.required' => 'Jawaban captcha wajib diisi.',
+            'captcha_answer.numeric'  => 'Jawaban captcha harus berupa angka.',
         ]);
 
+        // ==========================
+        // TIME-BASED CHECK
+        // ==========================
+        $start = (int) $request->input('form_time');
+        $now   = now()->timestamp;
+        $diff  = $now - $start;
+
+        // Minimal 3 detik sebagai batas wajar isi form
+        if ($start <= 0 || $diff < 3) {
+            return redirect()
+                ->back()
+                ->withErrors(['name' => 'Terjadi kesalahan sistem, silakan coba lagi.'])
+                ->withInput();
+        }
+
+        // ==========================
+        // CEK JAWABAN CAPTCHA
+        // ==========================
+        $expected = (int) session('headmaster_captcha_result');
+
+        if ((int) $request->captcha_answer !== $expected) {
+            return redirect()
+                ->back()
+                ->withErrors(['captcha_answer' => 'Jawaban captcha salah, silakan coba lagi.'])
+                ->withInput();
+        }
+
+        // Hapus captcha dari session setelah dipakai
+        session()->forget('headmaster_captcha_result');
+        session()->forget('headmaster_captcha_generated_at');
+
+        // ==========================
+        // SIMPAN DATA USER
+        // ==========================
         $user = new User();
         $user->name     = trim($request->name);
         $user->email    = trim($request->email);
@@ -77,7 +165,6 @@ class HeadmasterRegistrationController extends Controller
 
         $user->save();
 
-        // Setelah register, silakan pilih: redirect ke login atau dashboard
         return redirect()
             ->route('login')
             ->with('success', 'Pendaftaran akun Kepala Sekolah berhasil. Silakan login.');

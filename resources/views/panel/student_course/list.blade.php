@@ -18,6 +18,66 @@
                             @endif
                         </div>
                         <div class="card-body">
+
+                            {{-- Filter & Search --}}
+                            <form method="GET" action="{{ route('student_course.list') }}" class="row gy-2 gx-2 mb-3">
+                                {{-- Keyword --}}
+                                <div class="col-md-4">
+                                    <input type="text" name="keyword" class="form-control form-control-sm"
+                                        placeholder="Cari nama / NIK / sekolah / distrik"
+                                        value="{{ $filter_keyword ?? '' }}">
+                                </div>
+
+                                {{-- Filter school level --}}
+                                <div class="col-md-2">
+                                    <select name="school_level" class="form-select form-select-sm">
+                                        <option value="">All Level</option>
+                                        <option value="SD"
+                                            {{ ($filter_school_level ?? '') == 'SD' ? 'selected' : '' }}>SD</option>
+                                        <option value="SMP"
+                                            {{ ($filter_school_level ?? '') == 'SMP' ? 'selected' : '' }}>SMP</option>
+                                        <option value="SMA"
+                                            {{ ($filter_school_level ?? '') == 'SMA' ? 'selected' : '' }}>SMA</option>
+                                    </select>
+                                </div>
+
+                                {{-- Sort by --}}
+                                <div class="col-md-3">
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="created_at" {{ ($sort_by ?? '') == 'created_at' ? 'selected' : '' }}>
+                                            Sort: Created At
+                                        </option>
+                                        <option value="name" {{ ($sort_by ?? '') == 'name' ? 'selected' : '' }}>
+                                            Sort: Name
+                                        </option>
+                                        <option value="school_level"
+                                            {{ ($sort_by ?? '') == 'school_level' ? 'selected' : '' }}>
+                                            Sort: School Level
+                                        </option>
+                                        <option value="nik" {{ ($sort_by ?? '') == 'nik' ? 'selected' : '' }}>
+                                            Sort: NIK
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {{-- Sort direction --}}
+                                <div class="col-md-2">
+                                    <select name="sort_direction" class="form-select form-select-sm">
+                                        <option value="desc" {{ ($sort_direction ?? '') == 'desc' ? 'selected' : '' }}>
+                                            DESC</option>
+                                        <option value="asc" {{ ($sort_direction ?? '') == 'asc' ? 'selected' : '' }}>
+                                            ASC</option>
+                                    </select>
+                                </div>
+
+                                {{-- Buttons --}}
+                                <div class="col-md-3 d-flex gap-2">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filter</button>
+                                    <a href="{{ route('student_course.list') }}"
+                                        class="btn btn-sm btn-light w-100">Reset</a>
+                                </div>
+                            </form>
+
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
@@ -36,12 +96,23 @@
                                     <tbody>
                                         @forelse ($getRecord as $value)
                                             <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>{{ $value->nik }}</td>
+                                                {{-- nomor urut mengikuti pagination --}}
+                                                <td>{{ $getRecord->firstItem() + $loop->index }}</td>
+                                                <td>{{ $value->nik ?? '-' }}</td>
                                                 <td>{{ $value->name ?? '-' }}</td>
-                                                <td>{{ $value->birth_date }}</td>
-                                                <td>{{ $value->gender }}</td>
-                                                <td>{{ $value->school_level }}</td>
+                                                <td>
+                                                    {{ $value->birth_date ? \Carbon\Carbon::parse($value->birth_date)->format('d M Y') : '-' }}
+                                                </td>
+                                                <td>
+                                                    @if ($value->gender === 'M')
+                                                        <span class="badge bg-primary">Male</span>
+                                                    @elseif($value->gender === 'F')
+                                                        <span class="badge bg-info">Female</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">-</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $value->school_level ?? '-' }}</td>
                                                 @if (!empty($PermissionEdit) || !empty($PermissionDelete))
                                                     <td class="text-end">
                                                         @if (!empty($PermissionEdit))
@@ -65,6 +136,11 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {{-- Pagination --}}
+                            <div class="mt-3">
+                                {{ $getRecord->links('pagination::bootstrap-5') }}
                             </div>
                         </div>
                     </div>
