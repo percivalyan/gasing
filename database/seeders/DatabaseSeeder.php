@@ -34,6 +34,8 @@ class DatabaseSeeder extends Seeder
             // Papua Random Seeder
             // PapuaRandomSeeder::class,
             FooterSeeder::class,
+            StudentEventDummySeeder::class,
+            EventBatchSeeder::class,
         ]);
     }
 }

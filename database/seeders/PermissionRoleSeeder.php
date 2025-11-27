@@ -60,7 +60,7 @@ class PermissionRoleSeeder extends Seeder
          *
          *    Kalau kamu pakai kolom 'slug', ganti ke whereIn('slug', [...]).
          */
-        $headmasterPermissionNames = ['Add Student Event', 'Add Teacher Event'];
+        $headmasterPermissionNames = ['Add Student Event Kepala Sekolah', 'Add Teacher Event Kepala Sekolah'];
 
         $headmasterPermissions = DB::table('permissions')
             ->whereIn('name', $headmasterPermissionNames)
