@@ -8,3 +8,26 @@
 
 <!-- Main JS File -->
 <script src="{{ asset('landingpage/assets/js/main.js') }}"></script>
+{{-- SweetAlert Notifikasi --}}
+@if (session('success'))
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '{{ session('success') }}',
+            showConfirmButton: false,
+            timer: 2000
+        })
+    </script>
+@endif
+
+@if ($errors->any())
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: '{{ $errors->first() }}'
+        })
+    </script>
+@endif
