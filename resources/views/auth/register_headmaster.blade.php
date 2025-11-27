@@ -14,20 +14,19 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
         id="main-font-link">
-    <!-- [Tabler Icons] https://tablericons.com -->
+    <!-- [Tabler Icons] -->
     <link rel="stylesheet" href="{{ url('') }}/assets/fonts/tabler-icons.min.css">
-    <!-- [Feather Icons] https://feathericons.com -->
+    <!-- [Feather Icons] -->
     <link rel="stylesheet" href="{{ url('') }}/assets/fonts/feather.css">
-    <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
+    <!-- [Font Awesome Icons] -->
     <link rel="stylesheet" href="{{ url('') }}/assets/fonts/fontawesome.css">
-    <!-- [Material Icons] https://fonts.google.com/icons -->
+    <!-- [Material Icons] -->
     <link rel="stylesheet" href="{{ url('') }}/assets/fonts/material.css">
     <!-- [Template CSS Files] -->
     <link rel="stylesheet" href="{{ url('') }}/assets/css/style.css" id="main-style-link">
     <link rel="stylesheet" href="{{ url('') }}/assets/css/style-preset.css">
 </head>
 <!-- [Head] end -->
-<!-- [Body] Start -->
 
 <body>
     <!-- [ Pre-loader ] start -->
@@ -71,6 +70,16 @@
                         <form action="{{ route('register.headmaster.process') }}" method="POST">
                             @csrf
 
+                            {{-- Honeypot (jebakan bot) --}}
+                            <div style="display:none;">
+                                <label>Website</label>
+                                <input type="text" name="website" autocomplete="off">
+                            </div>
+
+                            {{-- Time-based check --}}
+                            <input type="hidden" name="form_time"
+                                value="{{ session('headmaster_captcha_generated_at') }}">
+
                             {{-- Nama --}}
                             <div class="form-group mb-3">
                                 <label class="form-label">Nama Lengkap</label>
@@ -91,8 +100,6 @@
                                 <input type="password" name="password" class="form-control" placeholder="Password"
                                     required>
                             </div>
-
-                            <hr class="my-3">
 
                             {{-- NIK --}}
                             <div class="form-group mb-3">
@@ -171,6 +178,44 @@
                                 <textarea name="address" class="form-control" rows="3" placeholder="Alamat lengkap">{{ old('address') }}</textarea>
                             </div>
 
+                            {{-- SECURITY CHECK / CAPTCHA --}}
+                            <div class="form-group mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    {{-- <label class="form-label mb-0">Security Check</label>
+                                    <span class="badge rounded-pill bg-light border small text-muted px-3 py-1">
+                                        <i class="ti ti-shield-lock me-1"></i> Math Captcha
+                                    </span> --}}
+                                </div>
+
+                                <div
+                                    class="border rounded-3 px-3 py-2 bg-light d-flex flex-column flex-sm-row
+                                            align-items-sm-center justify-content-between mb-2">
+                                    <div class="mb-1 mb-sm-0">
+                                        {{-- <span class="text-muted small d-block">Jawab soal berikut</span> --}}
+                                        <span class="fw-semibold fs-5">
+                                            {{ $a ?? '?' }} {{ $operator ?? '+' }} {{ $b ?? '?' }} = ?
+                                        </span>
+                                    </div>
+                                    {{-- <span class="small text-muted">
+                                        Verifikasi sederhana untuk mencegah pendaftaran otomatis.
+                                    </span> --}}
+                                </div>
+
+                                <input type="number" name="captcha_answer"
+                                    class="form-control @error('captcha_answer') is-invalid @enderror" placeholder=""
+                                    required>
+
+                                @error('captcha_answer')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @else
+                                    <small class="text-muted">
+                                        Pastikan Anda mengisi jawaban dengan angka yang benar.
+                                    </small>
+                                @enderror
+                            </div>
+
+                            <hr>
+
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <a href="{{ route('login') }}" class="text-secondary f-w-400">
                                     Sudah punya akun? Login
@@ -185,26 +230,10 @@
                         </form>
                     </div>
                 </div>
-                {{-- Footer bisa diaktifkan kalau mau sama seperti login --}}
-                {{-- <div class="auth-footer row">
-                    <div class="col my-1">
-                        <p class="m-0">Copyright © <a href="#">Codedthemes</a> Distributed by
-                            <a href="https://themewagon.com/">ThemeWagon</a>
-                        </p>
-                    </div>
-                    <div class="col-auto my-1">
-                        <ul class="list-inline footer-link mb-0">
-                            <li class="list-inline-item"><a href="#">Home</a></li>
-                            <li class="list-inline-item"><a href="#">Privacy Policy</a></li>
-                            <li class="list-inline-item"><a href="#">Contact us</a></li>
-                        </ul>
-                    </div>
-                </div> --}}
             </div>
         </div>
     </div>
 
-    <!-- [ Main Content ] end -->
     <!-- Required Js -->
     <script src="{{ url('') }}/assets/js/plugins/popper.min.js"></script>
     <script src="{{ url('') }}/assets/js/plugins/simplebar.min.js"></script>
@@ -214,20 +243,36 @@
     <script src="{{ url('') }}/assets/js/plugins/feather.min.js"></script>
     <script>
         layout_change('light');
-    </script>
-    <script>
         change_box_container('false');
-    </script>
-    <script>
         layout_rtl_change('false');
-    </script>
-    <script>
         preset_change("preset-1");
-    </script>
-    <script>
         font_change("Public-Sans");
     </script>
+
+    {{-- SweetAlert Notifikasi --}}
+    @if (session('success'))
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                showConfirmButton: false,
+                timer: 2000
+            })
+        </script>
+    @endif
+
+    @if ($errors->any())
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: '{{ $errors->first() }}'
+            })
+        </script>
+    @endif
+
 </body>
-<!-- [Body] end -->
 
 </html>

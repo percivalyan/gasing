@@ -32,15 +32,18 @@
                     <div class="card-body">
                         <div class="text-center mb-3">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('assets/logo_gasing.jpg') }}" alt="Logo"
-                                    class="img-fluid mb-2" style="max-width: 120px;">
+                                <img src="{{ asset('assets/logo_gasing.jpg') }}" alt="Logo" class="img-fluid mb-2"
+                                    style="max-width: 120px;">
                             </a>
                         </div>
 
                         <h3 class="mb-3 text-center"><b>Login</b></h3>
 
+                        {{-- Jika masih mau pakai partial message biasa --}}
                         @include('auth._message')
 
+                        {{-- ALERT BOOTSTRAP MANUAL DIHAPUS agar tidak dobel dengan SweetAlert --}}
+                        {{-- 
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul class="mb-0">
@@ -49,7 +52,8 @@
                                     @endforeach
                                 </ul>
                             </div>
-                        @endif
+                        @endif 
+                        --}}
 
                         <form action="{{ route('login.process') }}" method="POST" class="mt-3">
                             @csrf
@@ -61,8 +65,7 @@
                             </div>
 
                             {{-- Time-based validation --}}
-                            <input type="hidden" name="form_time"
-                                value="{{ session('login_captcha_generated_at') }}">
+                            <input type="hidden" name="form_time" value="{{ session('login_captcha_generated_at') }}">
 
                             {{-- EMAIL --}}
                             <div class="mb-3">
@@ -91,6 +94,7 @@
                             {{-- CAPTCHA --}}
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
+                                    {{-- Label bisa diaktifkan jika perlu --}}
                                     {{-- <label class="form-label mb-0">Security Check</label>
                                     <span class="badge bg-light border small text-muted">
                                         <i class="ti ti-shield-lock me-1"></i> Advanced Captcha
@@ -98,7 +102,6 @@
                                 </div>
 
                                 <div class="border rounded-3 px-3 py-2 bg-light mb-2">
-                                    <span class="small text-muted">Jawab soal berikut:</span>
                                     <div class="fw-semibold fs-5">
                                         {{ $a }} {{ $operator }} {{ $b }} = ?
                                     </div>
@@ -118,8 +121,7 @@
                             {{-- REMEMBER ME --}}
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="form-check">
-                                    <input type="checkbox" name="remember"
-                                        class="form-check-input input-primary"
+                                    <input type="checkbox" name="remember" class="form-check-input input-primary"
                                         id="rememberCheck" {{ old('remember') ? 'checked' : '' }}>
                                     <label for="rememberCheck" class="form-check-label text-muted">
                                         Keep me signed in
@@ -129,8 +131,8 @@
 
                             {{-- SUBMIT --}}
                             <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="ti ti-login me-2"></i> Login
+                                <button type="submit" class="btn btn-primary">
+                                    Login
                                 </button>
                             </div>
                         </form>
@@ -155,6 +157,42 @@
         preset_change("preset-1");
         font_change("Public-Sans");
     </script>
+
+    {{-- SweetAlert Notifikasi --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @if (session('success'))
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: '{{ session('success') }}',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal',
+                text: '{{ session('error') }}'
+            });
+        </script>
+    @endif
+
+    @if ($errors->any())
+        <script>
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                html: `{!! implode('<br>', $errors->all()) !!}`
+            });
+        </script>
+    @endif
+
 </body>
 
 </html>
