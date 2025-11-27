@@ -19,7 +19,7 @@
 
         <!-- Page Title -->
         <div class="page-title" data-aos="fade">
-            <div class="heading">
+            {{-- <div class="heading">
                 <div class="container">
                     <div class="row d-flex justify-content-center text-center">
                         <div class="col-lg-8">
@@ -30,7 +30,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
             <nav class="breadcrumbs">
                 <div class="container">
                     <ol>
@@ -66,7 +66,7 @@
                                     </div>
 
                                     <h3>
-                                        <a href="{{ url('/articles/' . $article->slug) }}">
+                                        <a href="{{ url('/ar/' . $article->slug) }}">
                                             {{ $article->title }}
                                         </a>
                                     </h3>

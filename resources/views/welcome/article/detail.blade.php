@@ -19,7 +19,7 @@
 
         <!-- Page Title -->
         <div class="page-title" data-aos="fade">
-            <div class="heading">
+            {{-- <div class="heading">
                 <div class="container">
                     <div class="row d-flex justify-content-center text-center">
                         <div class="col-lg-8">
@@ -30,7 +30,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
             <nav class="breadcrumbs">
                 <div class="container">
                     <ol>
@@ -48,7 +48,9 @@
             <div class="container" data-aos="fade-up">
 
                 <div class="row">
-                    <div class="col-lg-8">
+                    <div class="col-lg-12">
+
+                        <h1>{{ $article->title }}</h1>
 
                         <img src="{{ $article->image_path ? asset('storage/' . $article->image_path) : asset('landingpage/assets/img/default-article.jpg') }}"
                             class="img-fluid mb-4" alt="{{ $article->title }}">
@@ -75,7 +77,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-4">
+                    {{-- <div class="col-lg-4">
 
                         <div class="course-info d-flex justify-content-between align-items-center">
                             <h5>Category</h5>
@@ -99,7 +101,7 @@
                             <p class="text-capitalize">{{ $article->status }}</p>
                         </div>
 
-                    </div>
+                    </div> --}}
                 </div>
 
             </div>
