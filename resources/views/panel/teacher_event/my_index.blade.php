@@ -100,6 +100,10 @@
 
                             {{-- Jika pakai paginate():
                         {{ $getRecord->withQueryString()->links() }} --}}
+                            <div class="mt-3">
+                                {{ $getRecord->links('pagination::bootstrap-5') }}
+                            </div>
+
                         </div>
                     </div>
                 </div>
